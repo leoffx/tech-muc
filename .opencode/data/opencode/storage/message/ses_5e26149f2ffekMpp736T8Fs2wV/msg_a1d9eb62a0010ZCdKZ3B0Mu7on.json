@@ -1,0 +1,13 @@
+{
+  "id": "msg_a1d9eb62a0010ZCdKZ3B0Mu7on",
+  "sessionID": "ses_5e26149f2ffekMpp736T8Fs2wV",
+  "role": "user",
+  "time": {
+    "created": 1761433531946
+  },
+  "summary": {
+    "title": "Executing approved plan, highlighting blockers",
+    "body": "",
+    "diffs": []
+  }
+}

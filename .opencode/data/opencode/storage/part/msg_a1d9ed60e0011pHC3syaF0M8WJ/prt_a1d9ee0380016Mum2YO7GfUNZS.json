@@ -1,0 +1,17 @@
+{
+  "id": "prt_a1d9ee0380016Mum2YO7GfUNZS",
+  "sessionID": "ses_5e26149f2ffekMpp736T8Fs2wV",
+  "messageID": "msg_a1d9ed60e0011pHC3syaF0M8WJ",
+  "type": "reasoning",
+  "text": "",
+  "metadata": {
+    "openai": {
+      "itemId": "rs_0f633d90fe82b0f50068fd57c6a4ac8194b86917c48a2375bf",
+      "reasoningEncryptedContent": null
+    }
+  },
+  "time": {
+    "start": 1761433542713,
+    "end": 1761433544255
+  }
+}

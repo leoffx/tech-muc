@@ -1,0 +1,31 @@
+{
+  "id": "prt_a1d9f363d0019p4B4xSZDq3ZBl",
+  "sessionID": "ses_5e26149f2ffekMpp736T8Fs2wV",
+  "messageID": "msg_a1d9f297c001ffROxG8bSQJKR0",
+  "type": "tool",
+  "callID": "call_AHk5iEm1sWM1IEKKGRNec9RF",
+  "tool": "bash",
+  "state": {
+    "status": "completed",
+    "input": {
+      "command": "npm run check",
+      "description": "Runs lint and type checking"
+    },
+    "output": "\n> tech-muc@0.1.0 check\n> next lint && tsc --noEmit\n\n`next lint` is deprecated and will be removed in Next.js 16.\nFor new projects, use create-next-app to choose your preferred linter.\nFor existing projects, migrate to the ESLint CLI:\nnpx @next/codemod@canary next-lint-to-eslint-cli .\n\nnode:internal/modules/package_json_reader:268\n  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);\n        ^\n\nError [ERR_MODULE_NOT_FOUND]: Cannot find package '@t3-oss/env-nextjs' imported from /private/var/folders/88/lqk57rh54tbbls983nlsp0480000gn/T/tech-muc-agent/jd70bt3saf0t44apmxp2p4213d7t5zr6/src/env.js\n    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:268:9)\n    at packageResolve (node:internal/modules/esm/resolve:768:81)\n    at moduleResolve (node:internal/modules/esm/resolve:854:18)\n    at defaultResolve (node:internal/modules/esm/resolve:984:11)\n    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:685:12)\n    at #cachedDefaultResolve (node:internal/modules/esm/loader:634:25)\n    at ModuleLoader.resolve (node:internal/modules/esm/loader:617:38)\n    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:273:38)\n    at ModuleJob._link (node:internal/modules/esm/module_job:135:49) {\n  code: 'ERR_MODULE_NOT_FOUND'\n}\n\nNode.js v22.14.0\n",
+    "title": "npm run check",
+    "metadata": {
+      "output": "\n> tech-muc@0.1.0 check\n> next lint && tsc --noEmit\n\n`next lint` is deprecated and will be removed in Next.js 16.\nFor new projects, use create-next-app to choose your preferred linter.\nFor existing projects, migrate to the ESLint CLI:\nnpx @next/codemod@canary next-lint-to-eslint-cli .\n\nnode:internal/modules/package_json_reader:268\n  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);\n        ^\n\nError [ERR_MODULE_NOT_FOUND]: Cannot find package '@t3-oss/env-nextjs' imported from /private/var/folders/88/lqk57rh54tbbls983nlsp0480000gn/T/tech-muc-agent/jd70bt3saf0t44apmxp2p4213d7t5zr6/src/env.js\n    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:268:9)\n    at packageResolve (node:internal/modules/esm/resolve:768:81)\n    at moduleResolve (node:internal/modules/esm/resolve:854:18)\n    at defaultResolve (node:internal/modules/esm/resolve:984:11)\n    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:685:12)\n    at #cachedDefaultResolve (node:internal/modules/esm/loader:634:25)\n    at ModuleLoader.resolve (node:internal/modules/esm/loader:617:38)\n    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:273:38)\n    at ModuleJob._link (node:internal/modules/esm/module_job:135:49) {\n  code: 'ERR_MODULE_NOT_FOUND'\n}\n\nNode.js v22.14.0\n",
+      "exit": 1,
+      "description": "Runs lint and type checking"
+    },
+    "time": {
+      "start": 1761433565137,
+      "end": 1761433565399
+    }
+  },
+  "metadata": {
+    "openai": {
+      "itemId": "fc_0f633d90fe82b0f50068fd57dca5148194bd7a34ea891bb811"
+    }
+  }
+}
