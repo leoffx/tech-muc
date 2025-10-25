@@ -117,11 +117,15 @@ export const promptAgent = async (
     const promptResponse = await client.session.prompt({
       path: { id: activeSessionId },
       body: {
-        model: { providerID: "openai", modelID: "gpt-4o-mini" },
+        model: { providerID: "openai", modelID: "gpt-5-codex" },
         parts: [{ type: "text", text: prompt }],
       },
       throwOnError: true,
     });
+    logger.debug(
+      { sessionId: activeSessionId },
+      "Received response from OpenCode API"
+    );
     const promptData = promptResponse.data;
     if (!promptData) {
       const error =
