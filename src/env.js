@@ -8,6 +8,9 @@ export const env = createEnv({
    */
   server: {
     NODE_ENV: z.enum(["development", "test", "production"]),
+    OPENAI_API_KEY: z.string().min(1),
+    OPENCODE_MODEL: z.string().default("openai/gpt-5-codex"),
+    OPENCODE_ENDPOINT: z.string().url().optional(),
   },
 
   /**
@@ -25,6 +28,9 @@ export const env = createEnv({
    */
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENCODE_MODEL: process.env.OPENCODE_MODEL,
+    OPENCODE_ENDPOINT: process.env.OPENCODE_ENDPOINT,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**
