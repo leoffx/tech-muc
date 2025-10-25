@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { api, api as convexApi } from "../../../../convex/_generated/api";
+import { api as convexApi } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import {
   KANBAN_COLUMNS,
@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "~/app/_components/ui/card";
 import { Skeleton } from "~/app/_components/ui/skeleton";
+import { api } from "~/trpc/react";
 
 type TicketDetailViewProps = {
   ticketId: string;
@@ -51,6 +52,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   );
 
   const createPlan = api.plan.create.useMutation();
+  const createImplementation = api.plan.create.useMutation();
 
   if (ticket === undefined) {
     return <TicketDetailSkeleton />;
@@ -86,10 +88,8 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
         </span>
       </div>
 
-      <Button onClick={() => createPlan.mutate({ ticketId })}>
-        {" "}
-        Regenerate Plan
-      </Button>
+      <Button onClick={() => createPlan.mutate({ ticketId })}> Regenerate Plan</Button>
+      <Button onClick={() => createImplementation.mutate({ ticketId })}> Regenerate Implementation</Button>
       <Card>
         <CardHeader>
           <CardTitle className="text-foreground text-3xl font-semibold">
