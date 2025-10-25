@@ -220,10 +220,7 @@ function DraggableTicketCard({ ticket, onClick }: TicketCardProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className={cn(
-        "cursor-grab rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition focus:ring-2 focus:ring-slate-400 focus:outline-none",
-        isDragging ? "opacity-70 ring-0" : "hover:border-slate-300",
-      )}
+      className={cn(\n        "rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition focus:ring-2 focus:ring-slate-400 focus:outline-none",\n        isDragging ? "cursor-grab opacity-70 ring-0" : "cursor-pointer hover:border-slate-300",\n      )}
       onClick={() => {
         if (!isDragging) {
           onClick(ticket._id);
