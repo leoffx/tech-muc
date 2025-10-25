@@ -67,6 +67,14 @@ export function useKanban(projectId: string) {
       const tickets = backendTickets.map((ticket: any) => ({
         ...ticket,
         status: toFrontendStatus(ticket.status),
+        comments: ticket.comments?.map((comment: any) => ({
+          id: comment.id,
+          ticketId: comment.ticketId,
+          userId: comment.authorId,
+          content: comment.body,
+          createdAt: comment.createdAt,
+          user: comment.user,
+        })),
       }));
 
       dispatch({ type: 'SET_PROJECT', payload: project });

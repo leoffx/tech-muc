@@ -1,6 +1,6 @@
 import { db } from '../db/client.js';
 import { ticketComments } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 export interface Comment {
   id: string;
@@ -44,5 +44,33 @@ export const commentService = {
       kind: comment.kind as 'user' | 'ai',
       createdAt: comment.createdAt,
     }));
+  },
+
+  async findByTickets(ticketIds: string[]): Promise<Record<string, Comment[]>> {
+    if (ticketIds.length === 0) {
+      return {};
+    }
+
+    const result = await db.select()
+      .from(ticketComments)
+      .where(inArray(ticketComments.ticketId, ticketIds))
+      .orderBy(ticketComments.createdAt);
+
+    return result.reduce<Record<string, Comment[]>>((acc, comment) => {
+      const mappedComment: Comment = {
+        id: comment.id,
+        ticketId: comment.ticketId,
+        body: comment.body,
+        authorId: comment.authorId,
+        kind: comment.kind as 'user' | 'ai',
+        createdAt: comment.createdAt,
+      };
+
+      if (!acc[mappedComment.ticketId]) {
+        acc[mappedComment.ticketId] = [];
+      }
+      acc[mappedComment.ticketId].push(mappedComment);
+      return acc;
+    }, {});
   },
 };

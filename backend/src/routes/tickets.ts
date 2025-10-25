@@ -22,7 +22,15 @@ ticketsRouter.get('/', async (req: Request, res: Response) => {
   }
 
   const tickets = await ticketService.findByProject(projectId);
-  res.json(tickets);
+  const commentsByTicket = await commentService.findByTickets(
+    tickets.map((ticket) => ticket.id)
+  );
+  res.json(
+    tickets.map((ticket) => ({
+      ...ticket,
+      comments: commentsByTicket[ticket.id] || [],
+    }))
+  );
 });
 
 ticketsRouter.post('/', async (req: Request, res: Response) => {
