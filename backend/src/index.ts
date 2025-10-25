@@ -1,13 +1,13 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
-import { config } from './config';
-import { logger } from './utils/logger';
-import { WSServer } from './ws/server';
-import { setWSServer } from './ws/broadcaster';
-import { projectsRouter } from './routes/projects';
-import { boardRouter } from './routes/board';
-import { ticketsRouter } from './routes/tickets';
+import { config } from './config.js';
+import { logger } from './utils/logger.js';
+import { WSServer } from './ws/server.js';
+import { setWSServer } from './ws/broadcaster.js';
+import { projectsRouter } from './routes/projects.js';
+import { boardRouter } from './routes/board.js';
+import { ticketsRouter } from './routes/tickets.js';
 
 const app = express();
 

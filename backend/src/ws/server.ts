@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { Server, IncomingMessage } from 'http';
-import { logger } from '../utils/logger';
-import { ClientMessage } from './protocol';
+import { logger } from '../utils/logger.js';
+import { ClientMessage } from './protocol.js';
 
 export interface ExtWebSocket extends WebSocket {
   id: string;

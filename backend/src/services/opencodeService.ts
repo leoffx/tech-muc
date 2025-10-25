@@ -1,6 +1,6 @@
 import { createOpencode } from '@opencode-ai/sdk';
-import type { OpencodeClient } from '@opencode-ai/sdk';
-import { logger } from '../utils/logger';
+import type { OpencodeClient, Part, Session } from '@opencode-ai/sdk';
+import { logger } from '../utils/logger.js';
 
 let opencodeClient: OpencodeClient | null = null;
 let sessionId: string | null = null;
@@ -26,6 +26,8 @@ export const initializeOpencode = async (): Promise<OpencodeClient> => {
     await client.auth.set({
       path: { id: 'openai' },
       body: { type: 'api', key: apiKey },
+      throwOnError: true,
+      responseStyle: 'fields',
     });
 
     opencodeClient = client;
@@ -42,9 +44,15 @@ export const createSession = async (title?: string): Promise<string> => {
   const client = opencodeClient || await initializeOpencode();
 
   try {
-    const session = await client.session.create({
+    const sessionResponse = await client.session.create({
       body: { title: title || 'Tech MUC Session' },
+      throwOnError: true,
     });
+    const session = sessionResponse.data as Session | undefined;
+    if (!session) {
+      const error = 'error' in sessionResponse ? sessionResponse.error : undefined;
+      throw error ?? new Error('Failed to create OpenCode session');
+    }
 
     sessionId = session.id;
     logger.info({ sessionId: session.id, title }, 'OpenCode session created');
@@ -64,16 +72,23 @@ export const promptAgent = async (
   const activeSessionId = sessionIdOverride || sessionId || await createSession();
 
   try {
-    const result = await client.session.prompt({
+    const promptResponse = await client.session.prompt({
       path: { id: activeSessionId },
       body: {
         model: { providerID: 'openai', modelID: 'gpt-4o-mini' },
         parts: [{ type: 'text', text: prompt }],
       },
+      throwOnError: true,
     });
+    const promptData = promptResponse.data;
+    if (!promptData) {
+      const error = 'error' in promptResponse ? promptResponse.error : undefined;
+      throw error ?? new Error('OpenCode agent prompt failed');
+    }
+    const { parts } = promptData;
 
     let response = '';
-    result.parts.forEach((part) => {
+    parts.forEach((part: Part) => {
       if (part.type === 'text') {
         response += part.text;
       }

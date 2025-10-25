@@ -1,16 +1,16 @@
 import { v4 as uuidv4 } from "uuid";
-import { gitService } from "./gitService";
-import { ticketService } from "./ticketService";
-import { projectService } from "./projectService";
-import { commentService } from "./commentService";
+import { gitService } from "./gitService.js";
+import { ticketService } from "./ticketService.js";
+import { projectService } from "./projectService.js";
+import { commentService } from "./commentService.js";
 import {
   initializeOpencode,
   createSession,
   promptAgent,
-} from "./opencodeService";
-import { aiJobQueue } from "../jobs/aiQueue";
-import { logger } from "../utils/logger";
-import { broadcast } from "../ws/broadcaster";
+} from "./opencodeService.js";
+import { aiJobQueue } from "../jobs/aiQueue.js";
+import { logger } from "../utils/logger.js";
+import { broadcast } from "../ws/broadcaster.js";
 
 export interface AIJobStatus {
   id: string;

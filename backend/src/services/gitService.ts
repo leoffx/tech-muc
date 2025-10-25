@@ -1,7 +1,7 @@
-import simpleGit, { SimpleGit } from 'simple-git';
+import { simpleGit, type SimpleGit } from 'simple-git';
 import * as path from 'path';
 import * as fs from 'fs';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 const WORK_DIR = process.env.WORK_DIR || '/tmp/tech-muc-repos';
 

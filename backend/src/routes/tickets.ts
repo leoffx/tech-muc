@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { ticketService } from '../services/ticketService';
-import { commentService } from '../services/commentService';
-import { projectService } from '../services/projectService';
-import { aiAgentService } from '../services/aiAgentService';
-import { createTicketSchema, updateTicketSchema, moveTicketSchema, createCommentSchema } from '../utils/validators';
-import { logger } from '../utils/logger';
-import { broadcast } from '../ws/broadcaster';
+import { ticketService } from '../services/ticketService.js';
+import { commentService } from '../services/commentService.js';
+import { projectService } from '../services/projectService.js';
+import { aiAgentService } from '../services/aiAgentService.js';
+import { createTicketSchema, updateTicketSchema, moveTicketSchema, createCommentSchema } from '../utils/validators.js';
+import { logger } from '../utils/logger.js';
+import { broadcast } from '../ws/broadcaster.js';
 
 export const ticketsRouter = Router();
 

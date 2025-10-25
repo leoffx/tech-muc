@@ -1,5 +1,5 @@
-import { WSServer } from './server';
-import { ServerMessage } from './protocol';
+import { WSServer } from './server.js';
+import { ServerMessage } from './protocol.js';
 
 let wsServer: WSServer | null = null;
 

@@ -1,5 +1,5 @@
-import { db } from '../db/client';
-import { ticketComments } from '../db/schema';
+import { db } from '../db/client.js';
+import { ticketComments } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
 export interface Comment {

@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { projectService } from '../services/projectService';
-import { ticketService } from '../services/ticketService';
-import { createProjectSchema } from '../utils/validators';
-import { logger } from '../utils/logger';
+import { projectService } from '../services/projectService.js';
+import { ticketService } from '../services/ticketService.js';
+import { createProjectSchema } from '../utils/validators.js';
+import { logger } from '../utils/logger.js';
 
 export const projectsRouter = Router();
 

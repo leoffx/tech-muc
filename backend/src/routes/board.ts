@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { projectService } from '../services/projectService';
-import { ticketService } from '../services/ticketService';
+import { projectService } from '../services/projectService.js';
+import { ticketService } from '../services/ticketService.js';
 
 export const boardRouter = Router();
 
