@@ -21,11 +21,31 @@ const STATUSES = ["todo", "planning", "in-progress", "done"] as const;
 
 export type TicketStatus = (typeof STATUSES)[number];
 
-export const KANBAN_COLUMNS: Array<{ id: TicketStatus; title: string; description: string }> = [
-  { id: "todo", title: "Backlog", description: "Incoming and unprioritized work." },
-  { id: "planning", title: "Planning", description: "Tickets with plans underway." },
-  { id: "in-progress", title: "In Progress", description: "Actively being worked on." },
-  { id: "done", title: "Done", description: "Completed and ready to showcase." },
+export const KANBAN_COLUMNS: Array<{
+  id: TicketStatus;
+  title: string;
+  description: string;
+}> = [
+  {
+    id: "todo",
+    title: "Backlog",
+    description: "Incoming and unprioritized work.",
+  },
+  {
+    id: "planning",
+    title: "Planning",
+    description: "Tickets with plans underway.",
+  },
+  {
+    id: "in-progress",
+    title: "In Progress",
+    description: "Actively being worked on.",
+  },
+  {
+    id: "done",
+    title: "Done",
+    description: "Completed and ready to showcase.",
+  },
 ];
 
 export type KanbanTicket = {
@@ -37,24 +57,38 @@ export type KanbanTicket = {
 
 type KanbanBoardProps = {
   tickets: KanbanTicket[];
-  onMoveTicket: (ticketId: Id<"tickets">, status: TicketStatus) => Promise<void> | void;
+  onMoveTicket: (
+    ticketId: Id<"tickets">,
+    status: TicketStatus,
+  ) => Promise<void> | void;
   onTicketClick: (ticketId: Id<"tickets">) => void;
 };
 
-export function KanbanBoard({ tickets, onMoveTicket, onTicketClick }: KanbanBoardProps) {
+export function KanbanBoard({
+  tickets,
+  onMoveTicket,
+  onTicketClick,
+}: KanbanBoardProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
     }),
   );
 
-  const [activeTicketId, setActiveTicketId] = useState<Id<"tickets"> | null>(null);
+  const [activeTicketId, setActiveTicketId] = useState<Id<"tickets"> | null>(
+    null,
+  );
 
   const ticketsByStatus = useMemo(() => {
-    return KANBAN_COLUMNS.reduce<Record<TicketStatus, KanbanTicket[]>>((acc, column) => {
-      acc[column.id] = tickets.filter((ticket) => ticket.status === column.id);
-      return acc;
-    }, { todo: [], planning: [], "in-progress": [], done: [] });
+    return KANBAN_COLUMNS.reduce<Record<TicketStatus, KanbanTicket[]>>(
+      (acc, column) => {
+        acc[column.id] = tickets.filter(
+          (ticket) => ticket.status === column.id,
+        );
+        return acc;
+      },
+      { todo: [], planning: [], "in-progress": [], done: [] },
+    );
   }, [tickets]);
 
   const ticketLookup = useMemo(() => {
@@ -88,11 +122,17 @@ export function KanbanBoard({ tickets, onMoveTicket, onTicketClick }: KanbanBoar
     [onMoveTicket, ticketLookup],
   );
 
-  const activeTicket = activeTicketId ? ticketLookup.get(activeTicketId) ?? null : null;
+  const activeTicket = activeTicketId
+    ? (ticketLookup.get(activeTicketId) ?? null)
+    : null;
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="grid gap-4 lg:grid-cols-4 md:grid-cols-2">
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {KANBAN_COLUMNS.map((column) => (
           <Column
             key={column.id}
@@ -130,7 +170,9 @@ function Column({ column, tickets, onTicketClick }: ColumnProps) {
     >
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">{column.title}</h2>
+          <h2 className="text-sm font-semibold text-slate-900">
+            {column.title}
+          </h2>
           <p className="text-xs text-slate-500">{column.description}</p>
         </div>
         <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-700">
@@ -138,14 +180,18 @@ function Column({ column, tickets, onTicketClick }: ColumnProps) {
         </span>
       </div>
 
-      <div className="mt-4 flex flex-1 flex-col gap-3 overflow-y-auto">
+      <div className="mt-4 flex flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto">
         {tickets.length === 0 ? (
           <p className="rounded-md border border-dashed border-slate-300 bg-white/40 p-4 text-center text-xs text-slate-400">
             Drop tickets here
           </p>
         ) : (
           tickets.map((ticket) => (
-            <DraggableTicketCard key={ticket._id} ticket={ticket} onClick={onTicketClick} />
+            <DraggableTicketCard
+              key={ticket._id}
+              ticket={ticket}
+              onClick={onTicketClick}
+            />
           ))
         )}
       </div>
@@ -159,9 +205,10 @@ type TicketCardProps = {
 };
 
 function DraggableTicketCard({ ticket, onClick }: TicketCardProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: ticket._id,
-  });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: ticket._id,
+    });
 
   const style = transform
     ? ({
@@ -174,7 +221,7 @@ function DraggableTicketCard({ ticket, onClick }: TicketCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "cursor-grab rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition focus:outline-none focus:ring-2 focus:ring-slate-400",
+        "cursor-grab rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition focus:ring-2 focus:ring-slate-400 focus:outline-none",
         isDragging ? "opacity-70 ring-0" : "hover:border-slate-300",
       )}
       onClick={() => {
