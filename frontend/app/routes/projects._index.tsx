@@ -7,6 +7,7 @@ export default function ProjectsIndex() {
   const [isCreating, setIsCreating] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectKey, setNewProjectKey] = useState("");
+  const [newProjectRepoUrl, setNewProjectRepoUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +31,7 @@ export default function ProjectsIndex() {
 
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProjectName.trim() || !newProjectKey.trim()) return;
+    if (!newProjectName.trim() || !newProjectRepoUrl.trim()) return;
 
     try {
       const response = await fetch("http://localhost:3001/api/projects", {
@@ -38,7 +39,7 @@ export default function ProjectsIndex() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newProjectName,
-          key: newProjectKey.toUpperCase(),
+          repoUrl: newProjectRepoUrl,
         }),
       });
 
@@ -47,7 +48,7 @@ export default function ProjectsIndex() {
       const newProject = await response.json();
       setProjects([...projects, newProject]);
       setNewProjectName("");
-      setNewProjectKey("");
+      setNewProjectRepoUrl("");
       setIsCreating(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create project");
@@ -94,25 +95,24 @@ export default function ProjectsIndex() {
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   placeholder="e.g., My Awesome Project"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Project Key
+                  Repository URL
                 </label>
                 <input
-                  type="text"
-                  value={newProjectKey}
-                  onChange={(e) => setNewProjectKey(e.target.value.toUpperCase())}
-                  placeholder="e.g., MAP"
-                  maxLength={10}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                  type="url"
+                  value={newProjectRepoUrl}
+                  onChange={(e) => setNewProjectRepoUrl(e.target.value)}
+                  placeholder="e.g., https://github.com/username/repo"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  A short identifier (2-10 characters) used in ticket numbers
+                  The Git repository URL for this project
                 </p>
               </div>
               <div className="flex gap-2">
@@ -127,7 +127,7 @@ export default function ProjectsIndex() {
                   onClick={() => {
                     setIsCreating(false);
                     setNewProjectName("");
-                    setNewProjectKey("");
+                    setNewProjectRepoUrl("");
                     setError(null);
                   }}
                   className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
@@ -162,13 +162,10 @@ export default function ProjectsIndex() {
                 to={`/projects/${project.id}/board`}
                 className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="mb-3">
                   <h3 className="text-xl font-semibold text-gray-900">
                     {project.name}
                   </h3>
-                  <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded">
-                    {project.key}
-                  </span>
                 </div>
                 {project.description && (
                   <p className="text-gray-600 text-sm mb-4">

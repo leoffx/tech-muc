@@ -9,6 +9,21 @@ import { broadcast } from '../ws/broadcaster';
 
 export const ticketsRouter = Router();
 
+ticketsRouter.get('/', (req: Request, res: Response) => {
+  const { projectId } = req.query;
+  
+  if (!projectId || typeof projectId !== 'string') {
+    return res.status(400).json({ error: 'Project ID required' });
+  }
+
+  if (!projectService.findById(projectId)) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
+  const tickets = ticketService.findByProject(projectId);
+  res.json(tickets);
+});
+
 ticketsRouter.post('/', (req: Request, res: Response) => {
   try {
     const { projectId, ...data } = req.body;

@@ -1,4 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
+import { db } from '../db/client';
+import { projects } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 export interface Project {
   id: string;
@@ -7,25 +9,42 @@ export interface Project {
   createdAt: Date;
 }
 
-const projects = new Map<string, Project>();
-
 export const projectService = {
-  create(name: string, repoUrl: string): Project {
-    const project: Project = {
-      id: uuidv4(),
+  async create(name: string, repoUrl: string): Promise<Project> {
+    const [project] = await db.insert(projects).values({
       name,
-      repoUrl,
-      createdAt: new Date(),
+      githubUrl: repoUrl,
+    }).returning();
+    
+    return {
+      id: project.id,
+      name: project.name,
+      repoUrl: project.githubUrl,
+      createdAt: project.createdAt,
     };
-    projects.set(project.id, project);
-    return project;
   },
 
-  findById(id: string): Project | undefined {
-    return projects.get(id);
+  async findById(id: string): Promise<Project | undefined> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    
+    if (!project) return undefined;
+    
+    return {
+      id: project.id,
+      name: project.name,
+      repoUrl: project.githubUrl,
+      createdAt: project.createdAt,
+    };
   },
 
-  findAll(): Project[] {
-    return Array.from(projects.values());
+  async findAll(): Promise<Project[]> {
+    const result = await db.select().from(projects);
+    
+    return result.map(project => ({
+      id: project.id,
+      name: project.name,
+      repoUrl: project.githubUrl,
+      createdAt: project.createdAt,
+    }));
   },
 };

@@ -5,10 +5,10 @@ import { logger } from '../utils/logger';
 
 export const projectsRouter = Router();
 
-projectsRouter.post('/', (req: Request, res: Response) => {
+projectsRouter.post('/', async (req: Request, res: Response) => {
   try {
     const data = createProjectSchema.parse(req.body);
-    const project = projectService.create(data.name, data.repoUrl);
+    const project = await projectService.create(data.name, data.repoUrl);
     logger.info({ projectId: project.id }, 'Project created');
     res.status(201).json(project);
   } catch (err) {
@@ -17,15 +17,15 @@ projectsRouter.post('/', (req: Request, res: Response) => {
   }
 });
 
-projectsRouter.get('/:id', (req: Request, res: Response) => {
-  const project = projectService.findById(req.params.id);
+projectsRouter.get('/:id', async (req: Request, res: Response) => {
+  const project = await projectService.findById(req.params.id);
   if (!project) {
     return res.status(404).json({ error: 'Project not found' });
   }
   res.json(project);
 });
 
-projectsRouter.get('/', (req: Request, res: Response) => {
-  const projects = projectService.findAll();
+projectsRouter.get('/', async (req: Request, res: Response) => {
+  const projects = await projectService.findAll();
   res.json(projects);
 });
