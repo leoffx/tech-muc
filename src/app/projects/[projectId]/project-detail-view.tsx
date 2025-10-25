@@ -140,9 +140,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500">
-        Loading project…
-      </div>
+      <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"></div>
     );
   }
 

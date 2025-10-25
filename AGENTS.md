@@ -24,6 +24,8 @@
 - Avoid `useEffect`, unless for legit cases.
 - Minimize `useState` by deriving state when possible.
 - Always when possible prefer using ShadCN components instead of creating your own.
+- Use skeleton for handling loading states, do not use text like "Loading"
+- Handle empty states properly
 
 ## Commit & Pull Request Guidelines
 
