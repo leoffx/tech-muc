@@ -18,7 +18,6 @@ export interface SpawnTicketClientOptions {
 export interface SpawnPlanClientOptions extends SpawnTicketClientOptions {
   prompt: {
     system: string;
-    user: string;
   };
 }
 
@@ -27,10 +26,10 @@ export interface SpawnPlanResult {
   markdown: string;
 }
 
-export interface SpawnImplementationClientOptions extends SpawnTicketClientOptions {
+export interface SpawnImplementationClientOptions
+  extends SpawnTicketClientOptions {
   prompt?: {
     system: string;
-    user: string;
   };
 }
 
@@ -39,7 +38,9 @@ export interface SpawnImplementationResult {
   initialResponse?: string;
 }
 
-export async function ensureTicketWorkspace(options: EnsureTicketWorkspaceOptions) {
+export async function ensureTicketWorkspace(
+  options: EnsureTicketWorkspaceOptions,
+) {
   const workspace = await agentEnvironmentManager.ensureWorkspace(options);
   return workspace.toDescriptor();
 }
@@ -77,9 +78,13 @@ export async function finalizeImplementationChanges(options: {
   projectTitle: string;
   baseBranch: string;
 }) {
-  const workspace = await agentEnvironmentManager.getWorkspace(options.ticketId);
+  const workspace = await agentEnvironmentManager.getWorkspace(
+    options.ticketId,
+  );
   if (!workspace) {
-    throw new Error("Workspace not prepared for ticket; call ensureTicketWorkspace first.");
+    throw new Error(
+      "Workspace not prepared for ticket; call ensureTicketWorkspace first.",
+    );
   }
 
   const statusSummary = await workspace.getStatusSummary();
@@ -142,7 +147,9 @@ export async function finalizeImplementationChanges(options: {
   };
 }
 
-export async function spawnPlanClient(options: SpawnPlanClientOptions): Promise<SpawnPlanResult> {
+export async function spawnPlanClient(
+  options: SpawnPlanClientOptions,
+): Promise<SpawnPlanResult> {
   const { prompt, ...spawnOptions } = options;
 
   const client = await agentEnvironmentManager.spawnClient({
@@ -158,12 +165,14 @@ export async function spawnPlanClient(options: SpawnPlanClientOptions): Promise<
     },
     body: {
       system: prompt.system,
-      parts: [
-        {
-          type: "text",
-          text: prompt.user,
-        },
-      ],
+      parts: prompt.user
+        ? [
+            {
+              type: "text",
+              text: prompt.user,
+            },
+          ]
+        : [],
     },
     throwOnError: true,
   });
@@ -202,12 +211,14 @@ export async function spawnImplementationClient(
     },
     body: {
       system: prompt.system,
-      parts: [
-        {
-          type: "text",
-          text: prompt.user,
-        },
-      ],
+      parts: prompt.user
+        ? [
+            {
+              type: "text",
+              text: prompt.user,
+            },
+          ]
+        : [],
     },
     throwOnError: true,
   });
@@ -237,15 +248,11 @@ function extractTextFromPromptResponse(
   const data = response.data;
   if (!data || typeof data !== "object" || !("parts" in data)) {
     const maybeError = "error" in response ? response.error : undefined;
-    throw maybeError instanceof Error
-      ? maybeError
-      : new Error(errorMessage);
+    throw maybeError instanceof Error ? maybeError : new Error(errorMessage);
   }
 
   const potentialParts = (data as { parts?: unknown }).parts;
-  const parts: unknown[] = Array.isArray(potentialParts)
-    ? potentialParts
-    : [];
+  const parts: unknown[] = Array.isArray(potentialParts) ? potentialParts : [];
   const text = parts
     .filter(isTextPart)
     .map((part) => part.text.trim())
@@ -288,7 +295,7 @@ async function generateCommitMessage(options: {
     "Create a concise git commit message summarizing the implemented changes.",
     "Constraints:",
     "- Single line, maximum 72 characters.",
-    "- Imperative mood (e.g., \"Add\", \"Fix\").",
+    '- Imperative mood (e.g., "Add", "Fix").',
     "- Follow Conventional Commits (feat|fix|chore|docs|refactor|test|build|ci|perf|style) with optional scope.",
     "- No surrounding quotes or trailing punctuation.",
     "- Mention the ticket context when useful.",
@@ -330,8 +337,11 @@ async function generateCommitMessage(options: {
   const firstLine = rawMessage.split(/\r?\n/)[0]?.trim() ?? "";
   const normalized = firstLine.replace(/^["'`]+|["'`]+$/g, "");
   const sliced =
-    normalized.length > 72 ? normalized.slice(0, 72).replace(/\s+\S*$/, "") : normalized;
-  const conventionalPattern = /^(feat|fix|chore|docs|refactor|test|build|ci|perf|style)(\([^)]+\))?:\s.+/;
+    normalized.length > 72
+      ? normalized.slice(0, 72).replace(/\s+\S*$/, "")
+      : normalized;
+  const conventionalPattern =
+    /^(feat|fix|chore|docs|refactor|test|build|ci|perf|style)(\([^)]+\))?:\s.+/;
   if (sliced.length === 0 || !conventionalPattern.test(sliced)) {
     const summary = options.ticketTitle || `ticket ${options.ticketId}`;
     const base = `feat: ${summary}`;
@@ -365,7 +375,12 @@ async function generatePullRequestDescription(options: {
     `Base Branch: ${options.baseBranch}`,
     "",
     "Plan excerpt:",
-    wrapAsCodeFence(options.plan.length > 2_000 ? `${options.plan.slice(0, 2_000)}\n\n... (truncated)` : options.plan, "markdown"),
+    wrapAsCodeFence(
+      options.plan.length > 2_000
+        ? `${options.plan.slice(0, 2_000)}\n\n... (truncated)`
+        : options.plan,
+      "markdown",
+    ),
     "",
     "Git status summary:",
     wrapAsCodeFence(options.statusSummary || "(clean)", ""),

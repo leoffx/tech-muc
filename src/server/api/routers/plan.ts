@@ -18,10 +18,8 @@ import {
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 const promptTemplates = {
-  planSystem: loadPromptTemplate("plan-system.md"),
-  planUser: loadPromptTemplate("plan-user.md"),
-  implementationSystem: loadPromptTemplate("implementation-system.md"),
-  implementationUser: loadPromptTemplate("implementation-user.md"),
+  plan: loadPromptTemplate("plan-system.md"),
+  implementation: loadPromptTemplate("implementation-system.md"),
 };
 
 export const planRouter = createTRPCRouter({
@@ -69,7 +67,7 @@ export const planRouter = createTRPCRouter({
         repoUrl,
       });
 
-      const { systemPrompt, userPrompt } = buildPlanPrompts({
+      const systemPrompt = buildPlanPrompt({
         ticket,
         project,
         workspaceRepoUrl: workspace.repoUrl,
@@ -90,7 +88,6 @@ export const planRouter = createTRPCRouter({
         },
         prompt: {
           system: systemPrompt,
-          user: userPrompt,
         },
       });
 
@@ -166,9 +163,11 @@ export const planRouter = createTRPCRouter({
         branchName,
         baseRef: workspace.branch ?? undefined,
       });
-      const baseBranch = sanitizeBaseBranch(preparedWorkspace.branch ?? null);
+      const baseBranch = sanitizeBaseBranch(
+        (preparedWorkspace.branch ?? null) as string | null,
+      );
 
-      const { systemPrompt, userPrompt } = buildImplementationPrompts({
+      const systemPrompt = buildImplementationPrompt({
         ticket,
         project,
         plan: ticket.plan,
@@ -190,7 +189,6 @@ export const planRouter = createTRPCRouter({
         },
         prompt: {
           system: systemPrompt,
-          user: userPrompt,
         },
       });
 
@@ -266,7 +264,7 @@ function toTicketId(value: string): Id<"tickets"> {
   return value as Id<"tickets">;
 }
 
-function buildPlanPrompts(input: {
+function buildPlanPrompt(input: {
   ticket: Doc<"tickets">;
   project: Doc<"projects">;
   workspaceRepoUrl: string;
@@ -300,16 +298,9 @@ function buildPlanPrompts(input: {
     userStories,
   ].join("\n");
 
-  const systemPrompt = renderTemplate(promptTemplates.planSystem, {
+  return renderTemplate(promptTemplates.plan, {
     DYNAMIC_CONTENT: dynamicSections,
   });
-
-  const userPrompt = promptTemplates.planUser;
-
-  return {
-    systemPrompt,
-    userPrompt,
-  };
 }
 
 function formatAcceptanceCriteria(ticket: Doc<"tickets">) {
@@ -378,7 +369,10 @@ function indentBlock(text: string) {
 function createImplementationBranchName(ticket: Doc<"tickets">) {
   const baseTitle = ticket.title ?? "ticket";
   const slug = slugify(baseTitle, 40);
-  const hash = createHash("sha256").update(ticket._id).digest("hex").slice(0, 8);
+  const hash = createHash("sha256")
+    .update(ticket._id)
+    .digest("hex")
+    .slice(0, 8);
   return `ticket/${slug}-${hash}`;
 }
 
@@ -398,7 +392,7 @@ function slugify(value: string, maxLength: number) {
   return sanitized.slice(0, maxLength).replace(/-+$/g, "");
 }
 
-function buildImplementationPrompts(input: {
+function buildImplementationPrompt(input: {
   ticket: Doc<"tickets">;
   project: Doc<"projects">;
   plan: string;
@@ -425,18 +419,10 @@ function buildImplementationPrompts(input: {
     planSection,
   ].join("\n");
 
-  const systemPrompt = renderTemplate(promptTemplates.implementationSystem, {
+  return renderTemplate(promptTemplates.implementation, {
     DYNAMIC_CONTENT: dynamicSections,
-  });
-
-  const userPrompt = renderTemplate(promptTemplates.implementationUser, {
     BRANCH_NAME: input.branchName,
   });
-
-  return {
-    systemPrompt,
-    userPrompt,
-  };
 }
 
 function wrapAsCodeFence(content: string, language: string) {
