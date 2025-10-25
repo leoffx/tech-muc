@@ -62,7 +62,7 @@ export function Modal({
   return createPortal(
     open ? (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-slate-950/30 backdrop-blur-sm"
         role="dialog"
         aria-modal="true"
         onClick={handleOverlayClick}
@@ -76,7 +76,9 @@ export function Modal({
           {(hasTitle || hasDescription) && (
             <header className="space-y-1.5 border-b border-slate-200 px-6 py-4">
               {hasTitle && typeof title === "string" ? (
-                <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  {title}
+                </h2>
               ) : hasTitle ? (
                 title
               ) : null}

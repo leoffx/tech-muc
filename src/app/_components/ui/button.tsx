@@ -1,3 +1,5 @@
+// Note: Cursor pointer hand icon is provided via Tailwind cursor-pointer on enabled buttons to align with expected affordances across the app.
+
 import * as React from "react";
 
 import { cn } from "~/lib/utils";
@@ -10,7 +12,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         type={type}
         className={cn(
-          "inline-flex items-center justify-center whitespace-nowrap rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-900/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex cursor-pointer items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium whitespace-nowrap text-white transition-colors hover:bg-slate-900/90 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:cursor-default disabled:opacity-50",
           className,
         )}
         ref={ref}

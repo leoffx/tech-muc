@@ -21,6 +21,14 @@ async function runGit(args: string[], options?: { cwd?: string }) {
   });
 }
 
+async function runGh(args: string[], options?: { cwd?: string }) {
+  return execFileAsync("gh", args, {
+    cwd: options?.cwd,
+    env: process.env,
+    windowsHide: true,
+  });
+}
+
 export type AgentClientRole = "plan" | "implementation" | "general";
 
 export interface AgentClientDescriptor {
@@ -122,6 +130,21 @@ export class AgentEnvironmentManager {
       return [] as AgentClientDescriptor[];
     }
     return workspace.listClients();
+  }
+
+  async prepareImplementationBranch(
+    ticketId: string,
+    options: { branchName: string; baseRef?: string },
+  ) {
+    const workspace = await this.getWorkspace(ticketId);
+    if (!workspace) {
+      throw new Error(
+        "Workspace not prepared for ticket; call ensureTicketWorkspace first.",
+      );
+    }
+
+    await workspace.createAndPushBranch(options.branchName, options.baseRef);
+    return workspace;
   }
 
   private async getOrCreateWorkspaceForClient(input: SpawnClientInput) {
@@ -291,6 +314,41 @@ class Workspace {
     return descriptor;
   }
 
+  async createAndPushBranch(branchName: string, baseRef?: string) {
+    await this.ensure();
+    const gitDir = this.workspacePath;
+    await runGit(["fetch", "origin", "--prune"], { cwd: gitDir });
+    const startingPoint = baseRef ?? (await this.resolveDefaultBaseRef(gitDir));
+
+    const checkoutArgs = ["checkout", "-B", branchName];
+    if (startingPoint) {
+      checkoutArgs.push(startingPoint);
+    }
+
+    const remoteRef = `origin/${branchName}`;
+    const remoteExists = await this.refExists(remoteRef, gitDir);
+
+    if (remoteExists) {
+      await runGit(["checkout", branchName], { cwd: gitDir }).catch(async () => {
+        await runGit(["checkout", "-b", branchName, remoteRef], { cwd: gitDir });
+      });
+      await runGit(["pull", "--ff-only", "origin", branchName], { cwd: gitDir });
+    } else {
+      await runGit(checkoutArgs, { cwd: gitDir });
+      await runGit(["push", "--set-upstream", "origin", branchName], {
+        cwd: gitDir,
+      });
+    }
+
+    console.info("[AgentWorkspace] Prepared implementation branch", {
+      ticketId: this.ticketId,
+      repoUrl: this.repoUrl,
+      branch: branchName,
+      baseRef: startingPoint ?? null,
+      workspacePath: this.workspacePath,
+    });
+  }
+
   listClients() {
     return Array.from(this.clients.values()).map((client) => ({
       ...client,
@@ -309,6 +367,202 @@ class Workspace {
       createdAt: this.createdAt.toISOString(),
       clients: this.listClients(),
     };
+  }
+
+  private async resolveDefaultBaseRef(gitDir: string) {
+    if (this.branch) {
+      const explicit = this.branch.startsWith("origin/")
+        ? this.branch
+        : `origin/${this.branch}`;
+      if (await this.refExists(explicit, gitDir)) {
+        return explicit;
+      }
+    }
+
+    const tracking = await this.getTrackingBranchRef(gitDir);
+    if (tracking && (await this.refExists(tracking, gitDir))) {
+      return tracking;
+    }
+
+    const currentBranch = await this.getCurrentBranchName(gitDir);
+    if (currentBranch) {
+      const remoteRef = `origin/${currentBranch}`;
+      if (await this.refExists(remoteRef, gitDir)) {
+        return remoteRef;
+      }
+      if (await this.refExists(currentBranch, gitDir)) {
+        return currentBranch;
+      }
+    }
+
+    if (await this.refExists("origin/main", gitDir)) {
+      return "origin/main";
+    }
+
+    return undefined;
+  }
+
+  async getStatusSummary() {
+    const gitDir = this.workspacePath;
+    const { stdout } = await runGit(["status", "--short"], {
+      cwd: gitDir,
+    });
+    return stdout.trim();
+  }
+
+  async getDiffStat() {
+    const gitDir = this.workspacePath;
+    const { stdout } = await runGit(["diff", "--stat"], {
+      cwd: gitDir,
+    });
+    return stdout.trim();
+  }
+
+  async hasUncommittedChanges() {
+    const gitDir = this.workspacePath;
+    const { stdout } = await runGit(["status", "--porcelain"], {
+      cwd: gitDir,
+    });
+    return stdout.trim().length > 0;
+  }
+
+  async stageAllChanges() {
+    const gitDir = this.workspacePath;
+    await runGit(["add", "--all"], { cwd: gitDir });
+  }
+
+  async commitStagedChanges(message: string) {
+    const gitDir = this.workspacePath;
+    await runGit(["commit", "-m", message], { cwd: gitDir });
+    const { stdout } = await runGit(["rev-parse", "HEAD"], {
+      cwd: gitDir,
+    });
+    return stdout.trim();
+  }
+
+  async pushCurrentBranch() {
+    const gitDir = this.workspacePath;
+    const currentBranch = await this.getCurrentBranchName(gitDir);
+    const args = currentBranch
+      ? ["push", "origin", currentBranch]
+      : ["push"];
+    await runGit(args, { cwd: gitDir });
+  }
+
+  async ensurePullRequest(params: {
+    branchName: string;
+    baseBranch: string;
+    title: string;
+    body: string;
+  }) {
+    await this.ensure();
+    const gitDir = this.workspacePath;
+
+    const existing = await this.findExistingPullRequest(params.branchName, gitDir);
+
+    try {
+      if (existing) {
+        await runGh(
+          [
+            "pr",
+            "edit",
+            String(existing.number),
+            "--title",
+            params.title,
+            "--body",
+            params.body,
+          ],
+          { cwd: gitDir },
+        );
+      } else {
+        await runGh(
+          [
+            "pr",
+            "create",
+            "--head",
+            params.branchName,
+            "--base",
+            params.baseBranch,
+            "--title",
+            params.title,
+            "--body",
+            params.body,
+          ],
+          { cwd: gitDir },
+        );
+      }
+
+      const { stdout } = await runGh(
+        [
+          "pr",
+          "view",
+          params.branchName,
+          "--json",
+          "number,url,title,headRefName,baseRefName,state",
+        ],
+        { cwd: gitDir },
+      );
+      const details = JSON.parse(stdout) as {
+        number?: number;
+        url?: string;
+        headRefName?: string;
+        baseRefName?: string;
+        state?: string;
+        title?: string;
+      };
+      if (!details || typeof details !== "object" || !details.number || !details.url) {
+        throw new Error("Pull request view returned incomplete data");
+      }
+      return {
+        number: details.number,
+        url: details.url,
+        head: details.headRefName ?? params.branchName,
+        base: details.baseRefName ?? params.baseBranch,
+        state: details.state ?? "OPEN",
+        updated: Boolean(existing),
+      };
+    } catch (error) {
+      console.warn("[AgentWorkspace] Pull request operation failed", {
+        ticketId: this.ticketId,
+        branch: params.branchName,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
+
+  private async findExistingPullRequest(branchName: string, gitDir: string) {
+    try {
+      const { stdout } = await runGh(
+        [
+          "pr",
+          "list",
+          "--state",
+          "open",
+          "--head",
+          branchName,
+          "--json",
+          "number,url,title",
+        ],
+        { cwd: gitDir },
+      );
+      const list = JSON.parse(stdout) as Array<{ number?: number; url?: string }> | undefined;
+      const first = Array.isArray(list) && list.length > 0 ? list[0] : undefined;
+      if (first && typeof first.number === "number" && typeof first.url === "string") {
+        return {
+          number: first.number,
+          url: first.url,
+        };
+      }
+      return null;
+    } catch (error) {
+      console.warn("[AgentWorkspace] Unable to check existing PR", {
+        ticketId: this.ticketId,
+        branch: branchName,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
   }
 
   private cloneArgs() {

@@ -206,14 +206,10 @@ type TicketCardProps = {
 
 function DraggableTicketCard({ ticket, onClick }: TicketCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: ticket._id,
-    });
+    useDraggable({ id: ticket._id });
 
   const style = transform
-    ? ({
-        transform: CSS.Translate.toString(transform),
-      } as CSSProperties)
+    ? ({ transform: CSS.Translate.toString(transform) } as CSSProperties)
     : undefined;
 
   return (
@@ -221,13 +217,13 @@ function DraggableTicketCard({ ticket, onClick }: TicketCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "cursor-grab rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition focus:ring-2 focus:ring-slate-400 focus:outline-none",
-        isDragging ? "opacity-70 ring-0" : "hover:border-slate-300",
+        "rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition focus:ring-2 focus:ring-slate-400 focus:outline-none",
+        isDragging
+          ? "cursor-grab opacity-70 ring-0"
+          : "cursor-pointer hover:border-slate-300",
       )}
       onClick={() => {
-        if (!isDragging) {
-          onClick(ticket._id);
-        }
+        if (!isDragging) onClick(ticket._id);
       }}
       {...attributes}
       {...listeners}
