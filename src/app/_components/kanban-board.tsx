@@ -132,7 +132,7 @@ export function KanbanBoard({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid flex-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {KANBAN_COLUMNS.map((column) => (
           <Column
             key={column.id}
@@ -164,25 +164,25 @@ function Column({ column, tickets, onTicketClick }: ColumnProps) {
     <div
       ref={setNodeRef}
       className={cn(
-        "flex min-h-[420px] flex-col rounded-lg border border-border bg-muted/30 p-4 transition",
+        "border-border bg-muted/30 flex min-h-[420px] flex-col rounded-lg border p-4 transition",
         isOver && "border-primary bg-muted shadow-sm",
       )}
     >
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">
+          <h2 className="text-foreground text-sm font-semibold">
             {column.title}
           </h2>
-          <p className="text-xs text-muted-foreground">{column.description}</p>
+          <p className="text-muted-foreground text-xs">{column.description}</p>
         </div>
-        <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold text-secondary-foreground">
+        <span className="bg-secondary text-secondary-foreground ml-2 rounded-full px-2 py-0.5 text-xs font-semibold">
           {tickets.length}
         </span>
       </div>
 
       <div className="mt-4 flex flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto">
         {tickets.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border bg-card/40 p-4 text-center text-xs text-muted-foreground">
+          <p className="border-border bg-card/40 text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
             Drop tickets here
           </p>
         ) : (
@@ -217,10 +217,10 @@ function DraggableTicketCard({ ticket, onClick }: TicketCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "rounded-lg border border-border bg-card p-3 text-left shadow-sm transition focus:ring-2 focus:ring-ring focus:outline-none",
+        "border-border bg-card focus:ring-ring rounded-lg border p-3 text-left shadow-sm transition focus:ring-2 focus:outline-none",
         isDragging
           ? "cursor-grab opacity-70 ring-0"
-          : "cursor-pointer hover:border-primary",
+          : "hover:border-primary cursor-pointer",
       )}
       onClick={() => {
         if (!isDragging) onClick(ticket._id);
@@ -235,7 +235,7 @@ function DraggableTicketCard({ ticket, onClick }: TicketCardProps) {
 
 function TicketCardPreview({ ticket }: { ticket: KanbanTicket }) {
   return (
-    <div className="cursor-grabbing rounded-lg border border-border bg-card p-3 text-left shadow-lg">
+    <div className="border-border bg-card cursor-grabbing rounded-lg border p-3 text-left shadow-lg">
       <TicketCardContent ticket={ticket} />
     </div>
   );
@@ -244,8 +244,8 @@ function TicketCardPreview({ ticket }: { ticket: KanbanTicket }) {
 function TicketCardContent({ ticket }: { ticket: KanbanTicket }) {
   return (
     <div>
-      <p className="text-sm font-medium text-foreground">{ticket.title}</p>
-      <p className="mt-2 text-xs text-muted-foreground">{ticket.description}</p>
+      <p className="text-foreground text-sm font-medium">{ticket.title}</p>
+      <p className="text-muted-foreground mt-2 text-xs">{ticket.description}</p>
     </div>
   );
 }

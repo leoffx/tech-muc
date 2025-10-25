@@ -146,12 +146,12 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   if (!project) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-4 px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold text-foreground">
+        <h1 className="text-foreground text-2xl font-semibold">
           Project not found
         </h1>
         <Link
           href="/"
-          className="text-sm font-medium text-foreground underline underline-offset-4"
+          className="text-foreground text-sm font-medium underline underline-offset-4"
         >
           Go back to projects
         </Link>
@@ -160,26 +160,26 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
+    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-semibold text-foreground">
+            <h1 className="text-foreground text-3xl font-semibold">
               {project.title}
             </h1>
           </div>
-          <div className="mt-2 text-sm text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-sm">
             <span>Repository: </span>
             <Link
               href={project.githubRepoUrl}
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-foreground underline underline-offset-4"
+              className="text-foreground font-medium underline underline-offset-4"
             >
               {project.githubRepoUrl}
             </Link>
           </div>
-          <div className="mt-2 text-sm text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-sm">
             {kanbanTickets.length} ticket{kanbanTickets.length === 1 ? "" : "s"}
           </div>
         </div>
@@ -276,7 +276,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
                   </SelectContent>
                 </Select>
                 {!hasAuthors ? (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     You need at least one author in Convex to create tickets.
                   </p>
                 ) : null}
@@ -311,7 +311,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
 
 function ProjectDetailSkeleton() {
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
+    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-3">
           <Skeleton className="h-8 w-48" />
@@ -327,11 +327,11 @@ function ProjectDetailSkeleton() {
 
 function KanbanBoardSkeleton() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid flex-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
       {KANBAN_COLUMNS.map((column) => (
         <div
           key={column.id}
-          className="flex min-h-[420px] flex-col rounded-lg border border-border bg-muted/30 p-4"
+          className="border-border bg-muted/30 flex min-h-[420px] flex-col rounded-lg border p-4"
         >
           <div className="flex items-center justify-between">
             <div className="space-y-2">
@@ -344,7 +344,7 @@ function KanbanBoardSkeleton() {
             {Array.from({ length: 3 }).map((_, ticketIndex) => (
               <div
                 key={ticketIndex}
-                className="space-y-2 rounded-lg border border-border bg-card/90 p-4 shadow-sm"
+                className="border-border bg-card/90 space-y-2 rounded-lg border p-4 shadow-sm"
               >
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-3 w-full" />
