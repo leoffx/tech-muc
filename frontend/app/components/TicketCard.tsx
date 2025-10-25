@@ -1,5 +1,5 @@
-import { Draggable } from '@hello-pangea/dnd';
-import type { Ticket } from '../types/kanban';
+import { Draggable } from "@hello-pangea/dnd";
+import type { Ticket } from "../types/kanban";
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -9,16 +9,16 @@ interface TicketCardProps {
 
 export function TicketCard({ ticket, index, onClick }: TicketCardProps) {
   const priorityColors = {
-    low: 'bg-gray-100 text-gray-800',
-    medium: 'bg-yellow-100 text-yellow-800',
-    high: 'bg-red-100 text-red-800',
+    low: "bg-gray-100 text-gray-800",
+    medium: "bg-yellow-100 text-yellow-800",
+    high: "bg-red-100 text-red-800",
   };
 
   const aiStatusColors = {
-    pending: 'bg-gray-100 text-gray-600',
-    analyzing: 'bg-blue-100 text-blue-600 animate-pulse',
-    completed: 'bg-green-100 text-green-600',
-    failed: 'bg-red-100 text-red-600',
+    pending: "bg-gray-100 text-gray-600",
+    analyzing: "bg-blue-100 text-blue-600 animate-pulse",
+    completed: "bg-green-100 text-green-600",
+    failed: "bg-red-100 text-red-600",
   };
 
   return (
@@ -29,15 +29,15 @@ export function TicketCard({ ticket, index, onClick }: TicketCardProps) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={onClick}
-          className={`bg-white p-4 rounded-lg shadow mb-3 cursor-pointer hover:shadow-md transition-shadow ${
-            snapshot.isDragging ? 'shadow-lg' : ''
+          className={`bg-white p-4 rounded-lg shadow mb-3 cursor-pointer hover:shadow-md line-clamp-3 transition-shadow ${
+            snapshot.isDragging ? "shadow-lg" : ""
           }`}
         >
           <h3 className="font-medium text-gray-900 mb-2">{ticket.title}</h3>
           <p className="text-sm text-gray-600 mb-3 line-clamp-2">
             {ticket.description}
           </p>
-          
+
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className={`text-xs px-2 py-1 rounded ${
@@ -46,14 +46,14 @@ export function TicketCard({ ticket, index, onClick }: TicketCardProps) {
             >
               {ticket.priority}
             </span>
-            
-            {ticket.status === 'Plan' && ticket.aiStatus && (
+
+            {ticket.status === "Plan" && ticket.aiStatus && (
               <span
                 className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${
                   aiStatusColors[ticket.aiStatus]
                 }`}
               >
-                {ticket.aiStatus === 'analyzing' && (
+                {ticket.aiStatus === "analyzing" && (
                   <svg
                     className="w-3 h-3 animate-spin"
                     viewBox="0 0 24 24"
@@ -77,13 +77,13 @@ export function TicketCard({ ticket, index, onClick }: TicketCardProps) {
                 AI {ticket.aiStatus}
               </span>
             )}
-            
+
             {ticket.assignee && (
               <span className="text-xs text-gray-500">
                 {ticket.assignee.name}
               </span>
             )}
-            
+
             {ticket.comments && ticket.comments.length > 0 && (
               <span className="text-xs text-gray-500 ml-auto">
                 💬 {ticket.comments.length}

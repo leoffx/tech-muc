@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { Server } from 'http';
+import { Server, IncomingMessage } from 'http';
 import { logger } from '../utils/logger';
 import { ClientMessage } from './protocol';
 
@@ -18,13 +18,25 @@ export class WSServer {
     logger.info('WebSocket server initialized');
   }
 
-  private handleConnection(ws: ExtWebSocket) {
+  private handleConnection(rawWs: WebSocket, req: IncomingMessage) {
+    const ws = rawWs as ExtWebSocket;
     const id = this.generateId();
     ws.id = id;
     ws.subscriptions = new Set();
     this.clients.set(id, ws);
 
     logger.info({ clientId: id }, 'Client connected');
+    const requestUrl = req.url ?? '';
+    try {
+      const parsedUrl = new URL(requestUrl, 'http://localhost');
+      const projectId = parsedUrl.searchParams.get('projectId');
+      if (projectId) {
+        ws.subscriptions.add(projectId);
+        logger.debug({ clientId: id, projectId }, 'Client auto-subscribed via URL');
+      }
+    } catch (err) {
+      logger.warn({ err, clientId: id, url: requestUrl }, 'Failed to parse subscription from URL');
+    }
 
     ws.on('message', (data) => {
       try {

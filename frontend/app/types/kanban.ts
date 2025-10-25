@@ -56,4 +56,6 @@ export type BoardAction =
   | { type: 'ADD_TICKET'; payload: Ticket }
   | { type: 'UPDATE_TICKET'; payload: Ticket }
   | { type: 'MOVE_TICKET'; payload: { ticketId: string; status: TicketStatus } }
+  | { type: 'REMOVE_TICKET'; payload: string }
+  | { type: 'SET_TICKET_AI_STATUS'; payload: { ticketId: string; status: 'pending' | 'analyzing' | 'completed' | 'failed' } }
   | { type: 'ADD_COMMENT'; payload: { ticketId: string; comment: Comment } };

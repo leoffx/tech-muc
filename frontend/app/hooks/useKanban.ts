@@ -5,6 +5,26 @@ import type { TicketStatus, Ticket } from '../types/kanban';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
 
+function toFrontendStatus(backendStatus: string): TicketStatus {
+  const statusMap: Record<string, TicketStatus> = {
+    'todo': 'To Do',
+    'plan': 'Plan',
+    'in_progress': 'In Progress',
+    'done': 'Done',
+  };
+  return statusMap[backendStatus] || 'To Do';
+}
+
+function toBackendStatus(frontendStatus: TicketStatus): string {
+  const statusMap: Record<TicketStatus, string> = {
+    'To Do': 'todo',
+    'Plan': 'plan',
+    'In Progress': 'in_progress',
+    'Done': 'done',
+  };
+  return statusMap[frontendStatus] || 'todo';
+}
+
 export function useKanban(projectId: string) {
   const context = useContext(BoardContext);
   if (!context) {
@@ -20,6 +40,9 @@ export function useKanban(projectId: string) {
 
     return () => {
       if (wsRef.current) {
+        if (wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ type: 'unsubscribe', projectId }));
+        }
         wsRef.current.close();
       }
     };
@@ -39,7 +62,12 @@ export function useKanban(projectId: string) {
       }
 
       const project = await projectRes.json();
-      const tickets = await ticketsRes.json();
+      const backendTickets = await ticketsRes.json();
+      
+      const tickets = backendTickets.map((ticket: any) => ({
+        ...ticket,
+        status: toFrontendStatus(ticket.status),
+      }));
 
       dispatch({ type: 'SET_PROJECT', payload: project });
       dispatch({ type: 'SET_TICKETS', payload: tickets });
@@ -54,25 +82,67 @@ export function useKanban(projectId: string) {
   function connectWebSocket() {
     const ws = new WebSocket(`${WS_URL}/ws?projectId=${projectId}`);
 
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: 'subscribe', projectId }));
+    };
+
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
 
       switch (message.type) {
-        case 'ticket:updated':
-          dispatch({ type: 'UPDATE_TICKET', payload: message.data });
+        case 'ticket.updated': {
+          const ticket = {
+            ...message.ticket,
+            status: toFrontendStatus(message.ticket.status),
+          };
+          dispatch({ type: 'UPDATE_TICKET', payload: ticket });
           break;
-        case 'ticket:created':
-          dispatch({ type: 'ADD_TICKET', payload: message.data });
+        }
+        case 'ticket.created': {
+          const ticket = {
+            ...message.ticket,
+            status: toFrontendStatus(message.ticket.status),
+          };
+          dispatch({ type: 'ADD_TICKET', payload: ticket });
           break;
-        case 'comment:created':
+        }
+        case 'ticket.deleted': {
+          dispatch({ type: 'REMOVE_TICKET', payload: message.ticketId });
+          break;
+        }
+        case 'comment.created': {
           dispatch({
             type: 'ADD_COMMENT',
             payload: {
-              ticketId: message.data.ticketId,
-              comment: message.data,
+              ticketId: message.ticketId,
+              comment: {
+                id: message.comment.id,
+                ticketId: message.comment.ticketId,
+                userId: message.comment.authorId,
+                content: message.comment.body,
+                createdAt: message.comment.createdAt,
+              },
             },
           });
           break;
+        }
+        case 'ai_job.created':
+        case 'ai_job.updated': {
+          const statusMap: Record<string, Ticket['aiStatus']> = {
+            queued: 'pending',
+            running: 'analyzing',
+            done: 'completed',
+            error: 'failed',
+          };
+          const aiStatus = statusMap[message.job.status];
+          if (aiStatus) {
+            dispatch({
+              type: 'SET_TICKET_AI_STATUS',
+              payload: { ticketId: message.ticketId, status: aiStatus },
+            });
+          }
+          break;
+        }
       }
     };
 
@@ -87,10 +157,10 @@ export function useKanban(projectId: string) {
     dispatch({ type: 'MOVE_TICKET', payload: { ticketId, status: newStatus } });
 
     try {
-      const response = await fetch(`${API_URL}/api/tickets/${ticketId}`, {
+      const response = await fetch(`${API_URL}/api/tickets/${ticketId}/move`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: toBackendStatus(newStatus) }),
       });
 
       if (!response.ok) {
@@ -98,7 +168,11 @@ export function useKanban(projectId: string) {
         throw new Error('Failed to update ticket');
       }
 
-      const updatedTicket = await response.json();
+      const backendTicket = await response.json();
+      const updatedTicket = {
+        ...backendTicket,
+        status: toFrontendStatus(backendTicket.status),
+      };
       dispatch({ type: 'UPDATE_TICKET', payload: updatedTicket });
     } catch (error) {
       console.error('Failed to move ticket:', error);
@@ -122,7 +196,11 @@ export function useKanban(projectId: string) {
         throw new Error('Failed to create ticket');
       }
 
-      const ticket = await response.json();
+      const backendTicket = await response.json();
+      const ticket = {
+        ...backendTicket,
+        status: toFrontendStatus(backendTicket.status),
+      };
       dispatch({ type: 'ADD_TICKET', payload: ticket });
       return ticket;
     } catch (error) {
@@ -136,14 +214,19 @@ export function useKanban(projectId: string) {
       const response = await fetch(`${API_URL}/api/tickets/${ticketId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, author: 'user' }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to add comment');
       }
 
-      const comment = await response.json();
+      const backendComment = await response.json();
+      const comment = {
+        ...backendComment,
+        content: backendComment.body,
+        userId: backendComment.authorId,
+      };
       dispatch({ type: 'ADD_COMMENT', payload: { ticketId, comment } });
       return comment;
     } catch (error) {

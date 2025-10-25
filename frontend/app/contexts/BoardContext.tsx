@@ -36,6 +36,20 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
             : t
         ),
       };
+    case 'REMOVE_TICKET':
+      return {
+        ...state,
+        tickets: state.tickets.filter((t) => t.id !== action.payload),
+      };
+    case 'SET_TICKET_AI_STATUS':
+      return {
+        ...state,
+        tickets: state.tickets.map((t) =>
+          t.id === action.payload.ticketId
+            ? { ...t, aiStatus: action.payload.status }
+            : t
+        ),
+      };
     case 'ADD_COMMENT':
       return {
         ...state,
@@ -43,7 +57,9 @@ function boardReducer(state: BoardState, action: BoardAction): BoardState {
           t.id === action.payload.ticketId
             ? {
                 ...t,
-                comments: [...(t.comments || []), action.payload.comment],
+                comments: t.comments?.some(c => c.id === action.payload.comment.id)
+                  ? t.comments
+                  : [...(t.comments || []), action.payload.comment],
               }
             : t
         ),
