@@ -127,7 +127,7 @@ class AIAgentService {
       );
       const analysis = await promptAgent(prompt, sessionId);
 
-      await commentService.create(ticketId, analysis, "AI Agent", "ai");
+      await commentService.create(ticketId, analysis, null as any, "ai");
 
       job.status = "done";
       job.updatedAt = new Date();
