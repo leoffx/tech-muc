@@ -1,3 +1,5 @@
+// Note: Cursor pointer hand icon is provided via Tailwind cursor-pointer on enabled buttons to align with expected affordances across the app.
+
 import * as React from "react";
 
 import { cn } from "~/lib/utils";
