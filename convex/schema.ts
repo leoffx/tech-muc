@@ -3,7 +3,19 @@ import { v } from "convex/values";
 
 export default defineSchema({
   tasks: defineTable({
-    text: v.string(),
-    isCompleted: v.boolean(),
+    title: v.string(),
+    description: v.string(),
+    status: v.union(
+      v.literal("todo"),
+      v.literal("planning"),
+      v.literal("in-progress"),
+      v.literal("done"),
+    ),
+    author: v.id("authors"),
+    conversation: v.optional(v.object({})),
+  }),
+  authors: defineTable({
+    name: v.string(),
+    imageUrl: v.string(),
   }),
 });
