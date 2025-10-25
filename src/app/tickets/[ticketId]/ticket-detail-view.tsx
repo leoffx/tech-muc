@@ -40,7 +40,9 @@ const STATUS_COLORS: Record<TicketStatus, string> = {
 
 export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   const router = useRouter();
-  const ticket = useQuery(convexApi.tickets.get, { ticketId: toTicketId(ticketId) });
+  const ticket = useQuery(convexApi.tickets.get, {
+    ticketId: toTicketId(ticketId),
+  });
   const author = useQuery(
     convexApi.authors.get,
     ticket ? { authorId: ticket.author } : "skip",
@@ -50,11 +52,12 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
     ticket ? { projectId: ticket.projectId } : "skip",
   );
 
-  const createPlan = api.plan.create.useMutation();
+  const createImplementation = api.plan.implement.useMutation();
 
   useEffect(() => {
     if (ticketId) {
-      createPlan.mutate({ ticketId });
+      // createPlan.mutate({ ticketId });
+      createImplementation.mutate({ ticketId });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketId]);
