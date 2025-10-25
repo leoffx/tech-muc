@@ -9,31 +9,33 @@ import { broadcast } from '../ws/broadcaster';
 
 export const ticketsRouter = Router();
 
-ticketsRouter.get('/', (req: Request, res: Response) => {
+ticketsRouter.get('/', async (req: Request, res: Response) => {
   const { projectId } = req.query;
   
   if (!projectId || typeof projectId !== 'string') {
     return res.status(400).json({ error: 'Project ID required' });
   }
 
-  if (!projectService.findById(projectId)) {
+  const project = await projectService.findById(projectId);
+  if (!project) {
     return res.status(404).json({ error: 'Project not found' });
   }
 
-  const tickets = ticketService.findByProject(projectId);
+  const tickets = await ticketService.findByProject(projectId);
   res.json(tickets);
 });
 
-ticketsRouter.post('/', (req: Request, res: Response) => {
+ticketsRouter.post('/', async (req: Request, res: Response) => {
   try {
     const { projectId, ...data } = req.body;
     
-    if (!projectId || !projectService.findById(projectId)) {
+    const project = await projectService.findById(projectId);
+    if (!projectId || !project) {
       return res.status(404).json({ error: 'Project not found' });
     }
 
     const validData = createTicketSchema.parse(data);
-    const ticket = ticketService.create(projectId, validData);
+    const ticket = await ticketService.create(projectId, validData);
     
     broadcast({ type: 'ticket.created', projectId, ticket });
     logger.info({ ticketId: ticket.id, projectId }, 'Ticket created');
@@ -45,18 +47,18 @@ ticketsRouter.post('/', (req: Request, res: Response) => {
   }
 });
 
-ticketsRouter.get('/:id', (req: Request, res: Response) => {
-  const ticket = ticketService.findById(req.params.id);
+ticketsRouter.get('/:id', async (req: Request, res: Response) => {
+  const ticket = await ticketService.findById(req.params.id);
   if (!ticket) {
     return res.status(404).json({ error: 'Ticket not found' });
   }
   res.json(ticket);
 });
 
-ticketsRouter.patch('/:id', (req: Request, res: Response) => {
+ticketsRouter.patch('/:id', async (req: Request, res: Response) => {
   try {
     const validData = updateTicketSchema.parse(req.body);
-    const ticket = ticketService.update(req.params.id, validData);
+    const ticket = await ticketService.update(req.params.id, validData);
     
     if (!ticket) {
       return res.status(404).json({ error: 'Ticket not found' });
@@ -75,7 +77,7 @@ ticketsRouter.patch('/:id', (req: Request, res: Response) => {
 ticketsRouter.patch('/:id/move', async (req: Request, res: Response) => {
   try {
     const { status } = moveTicketSchema.parse(req.body);
-    const ticket = ticketService.update(req.params.id, { status });
+    const ticket = await ticketService.update(req.params.id, { status });
     
     if (!ticket) {
       return res.status(404).json({ error: 'Ticket not found' });
@@ -95,13 +97,13 @@ ticketsRouter.patch('/:id/move', async (req: Request, res: Response) => {
   }
 });
 
-ticketsRouter.delete('/:id', (req: Request, res: Response) => {
-  const ticket = ticketService.findById(req.params.id);
+ticketsRouter.delete('/:id', async (req: Request, res: Response) => {
+  const ticket = await ticketService.findById(req.params.id);
   if (!ticket) {
     return res.status(404).json({ error: 'Ticket not found' });
   }
 
-  const deleted = ticketService.delete(req.params.id);
+  const deleted = await ticketService.delete(req.params.id);
   if (deleted) {
     broadcast({ type: 'ticket.deleted', projectId: ticket.projectId, ticketId: ticket.id });
     logger.info({ ticketId: ticket.id }, 'Ticket deleted');
@@ -110,15 +112,15 @@ ticketsRouter.delete('/:id', (req: Request, res: Response) => {
   res.status(204).send();
 });
 
-ticketsRouter.post('/:id/comments', (req: Request, res: Response) => {
+ticketsRouter.post('/:id/comments', async (req: Request, res: Response) => {
   try {
-    const ticket = ticketService.findById(req.params.id);
+    const ticket = await ticketService.findById(req.params.id);
     if (!ticket) {
       return res.status(404).json({ error: 'Ticket not found' });
     }
 
     const { content, author } = createCommentSchema.parse(req.body);
-    const comment = commentService.create(ticket.id, content, author);
+    const comment = await commentService.create(ticket.id, content, author);
     
     broadcast({ type: 'comment.created', projectId: ticket.projectId, ticketId: ticket.id, comment });
     logger.info({ commentId: comment.id, ticketId: ticket.id }, 'Comment created');
@@ -130,12 +132,12 @@ ticketsRouter.post('/:id/comments', (req: Request, res: Response) => {
   }
 });
 
-ticketsRouter.get('/:id/comments', (req: Request, res: Response) => {
-  const ticket = ticketService.findById(req.params.id);
+ticketsRouter.get('/:id/comments', async (req: Request, res: Response) => {
+  const ticket = await ticketService.findById(req.params.id);
   if (!ticket) {
     return res.status(404).json({ error: 'Ticket not found' });
   }
 
-  const comments = commentService.findByTicket(ticket.id);
+  const comments = await commentService.findByTicket(ticket.id);
   res.json(comments);
 });

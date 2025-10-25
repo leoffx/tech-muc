@@ -1,19 +1,27 @@
-import { useState } from 'react';
-import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
-import { useKanban } from '../hooks/useKanban';
-import { Column } from './Column';
-import { TicketDetails } from './TicketDetails';
-import { NewTicketForm } from './NewTicketForm';
-import type { Ticket, TicketStatus } from '../types/kanban';
+import { useState } from "react";
+import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
+import { useKanban } from "../hooks/useKanban";
+import { Column } from "./Column";
+import { TicketDetails } from "./TicketDetails";
+import { NewTicketForm } from "./NewTicketForm";
+import type { Ticket, TicketStatus } from "../types/kanban";
 
-const STATUSES: TicketStatus[] = ['To Do', 'Plan', 'In Progress', 'Done'];
+const STATUSES: TicketStatus[] = ["To Do", "Plan", "In Progress", "Done"];
 
 interface BoardPageProps {
   projectId: string;
 }
 
 export function BoardPage({ projectId }: BoardPageProps) {
-  const { tickets, project, loading, error, moveTicket, createTicket, addComment } = useKanban(projectId);
+  const {
+    tickets,
+    project,
+    loading,
+    error,
+    moveTicket,
+    createTicket,
+    addComment,
+  } = useKanban(projectId);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [showNewTicketForm, setShowNewTicketForm] = useState(false);
 
@@ -53,7 +61,7 @@ export function BoardPage({ projectId }: BoardPageProps) {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">
-              {project?.name || 'Project Board'}
+              {project?.name || "Project Board"}
             </h1>
             <button
               onClick={() => setShowNewTicketForm(true)}
@@ -68,9 +76,9 @@ export function BoardPage({ projectId }: BoardPageProps) {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto py-8 sm:px-6 lg:px-8">
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="flex gap-4 overflow-x-auto pb-4">
+          <div className="flex gap-4 overflow-x-auto pb-4 min-h-[80vh]">
             {STATUSES.map((status) => (
               <Column
                 key={status}
@@ -85,7 +93,9 @@ export function BoardPage({ projectId }: BoardPageProps) {
 
       {selectedTicket && (
         <TicketDetails
-          ticket={tickets.find((t) => t.id === selectedTicket.id) || selectedTicket}
+          ticket={
+            tickets.find((t) => t.id === selectedTicket.id) || selectedTicket
+          }
           onClose={() => setSelectedTicket(null)}
           onAddComment={addComment}
         />

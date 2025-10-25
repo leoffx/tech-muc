@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { projectService } from '../services/projectService';
+import { ticketService } from '../services/ticketService';
 import { createProjectSchema } from '../utils/validators';
 import { logger } from '../utils/logger';
 
@@ -28,4 +29,14 @@ projectsRouter.get('/:id', async (req: Request, res: Response) => {
 projectsRouter.get('/', async (req: Request, res: Response) => {
   const projects = await projectService.findAll();
   res.json(projects);
+});
+
+projectsRouter.get('/:id/tickets', async (req: Request, res: Response) => {
+  const project = await projectService.findById(req.params.id);
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+  
+  const tickets = ticketService.findByProject(req.params.id);
+  res.json(tickets);
 });

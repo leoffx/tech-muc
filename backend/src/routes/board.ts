@@ -4,16 +4,17 @@ import { ticketService } from '../services/ticketService';
 
 export const boardRouter = Router();
 
-boardRouter.get('/projects/:id/board', (req: Request, res: Response) => {
-  const project = projectService.findById(req.params.id);
+boardRouter.get('/projects/:id/board', async (req: Request, res: Response) => {
+  const project = await projectService.findById(req.params.id);
   if (!project) {
     return res.status(404).json({ error: 'Project not found' });
   }
 
-  const tickets = ticketService.findByProject(project.id);
+  const tickets = await ticketService.findByProject(project.id);
   const board = {
     todo: tickets.filter(t => t.status === 'todo'),
-    'in-progress': tickets.filter(t => t.status === 'in-progress'),
+    plan: tickets.filter(t => t.status === 'plan'),
+    in_progress: tickets.filter(t => t.status === 'in_progress'),
     done: tickets.filter(t => t.status === 'done'),
   };
 

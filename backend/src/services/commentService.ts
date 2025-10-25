@@ -1,33 +1,48 @@
-import { v4 as uuidv4 } from 'uuid';
+import { db } from '../db/client';
+import { ticketComments } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 export interface Comment {
   id: string;
   ticketId: string;
-  content: string;
-  author: string;
+  body: string;
+  authorId: string | null;
   kind: 'user' | 'ai';
   createdAt: Date;
 }
 
-const comments = new Map<string, Comment>();
-
 export const commentService = {
-  create(ticketId: string, content: string, author: string, kind: 'user' | 'ai' = 'user'): Comment {
-    const comment: Comment = {
-      id: uuidv4(),
+  async create(ticketId: string, content: string, author: string, kind: 'user' | 'ai' = 'user'): Promise<Comment> {
+    const [comment] = await db.insert(ticketComments).values({
       ticketId,
-      content,
-      author,
+      body: content,
+      authorId: author,
       kind,
-      createdAt: new Date(),
+    }).returning();
+
+    return {
+      id: comment.id,
+      ticketId: comment.ticketId,
+      body: comment.body,
+      authorId: comment.authorId,
+      kind: comment.kind as 'user' | 'ai',
+      createdAt: comment.createdAt,
     };
-    comments.set(comment.id, comment);
-    return comment;
   },
 
-  findByTicket(ticketId: string): Comment[] {
-    return Array.from(comments.values())
-      .filter(c => c.ticketId === ticketId)
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  async findByTicket(ticketId: string): Promise<Comment[]> {
+    const result = await db.select()
+      .from(ticketComments)
+      .where(eq(ticketComments.ticketId, ticketId))
+      .orderBy(ticketComments.createdAt);
+
+    return result.map(comment => ({
+      id: comment.id,
+      ticketId: comment.ticketId,
+      body: comment.body,
+      authorId: comment.authorId,
+      kind: comment.kind as 'user' | 'ai',
+      createdAt: comment.createdAt,
+    }));
   },
 };

@@ -31,7 +31,7 @@ export function useKanban(projectId: string) {
       
       const [projectRes, ticketsRes] = await Promise.all([
         fetch(`${API_URL}/api/projects/${projectId}`),
-        fetch(`${API_URL}/api/projects/${projectId}/tickets`),
+        fetch(`${API_URL}/api/tickets?projectId=${projectId}`),
       ]);
 
       if (!projectRes.ok || !ticketsRes.ok) {
@@ -112,10 +112,10 @@ export function useKanban(projectId: string) {
     priority: 'low' | 'medium' | 'high';
   }) {
     try {
-      const response = await fetch(`${API_URL}/api/projects/${projectId}/tickets`, {
+      const response = await fetch(`${API_URL}/api/tickets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, projectId }),
       });
 
       if (!response.ok) {

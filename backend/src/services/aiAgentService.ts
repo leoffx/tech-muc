@@ -25,13 +25,13 @@ const aiJobs = new Map<string, AIJobStatus>();
 
 class AIAgentService {
   async onTicketMovedToPlan(ticketId: string): Promise<void> {
-    const ticket = ticketService.findById(ticketId);
+    const ticket = await ticketService.findById(ticketId);
     if (!ticket) {
       logger.error({ ticketId }, 'Ticket not found');
       return;
     }
 
-    const project = projectService.findById(ticket.projectId);
+    const project = await projectService.findById(ticket.projectId);
     if (!project) {
       logger.error({ ticketId, projectId: ticket.projectId }, 'Project not found');
       return;
@@ -83,7 +83,7 @@ class AIAgentService {
       job.status = 'running';
       job.updatedAt = new Date();
       
-      const currentTicket = ticketService.findById(ticketId);
+      const currentTicket = await ticketService.findById(ticketId);
       if (currentTicket) {
         broadcast({ 
           type: 'ai_job.updated', 
@@ -93,7 +93,7 @@ class AIAgentService {
         });
       }
 
-      const ticket = ticketService.findById(ticketId);
+      const ticket = await ticketService.findById(ticketId);
       if (!ticket) throw new Error('Ticket not found');
 
       logger.info({ jobId, ticketId, repoUrl }, 'Starting AI analysis');
@@ -104,7 +104,7 @@ class AIAgentService {
       const prompt = this.buildPrompt(ticket.title, ticket.description, repoStructure);
       const analysis = await this.callOpenAI(prompt);
 
-      commentService.create(ticketId, analysis, 'AI Agent', 'ai');
+      await commentService.create(ticketId, analysis, 'AI Agent', 'ai');
 
       job.status = 'done';
       job.updatedAt = new Date();
@@ -115,11 +115,12 @@ class AIAgentService {
         ticketId, 
         job 
       });
+      const comments = await commentService.findByTicket(ticketId);
       broadcast({
         type: 'comment.created',
         projectId: ticket.projectId,
         ticketId,
-        comment: commentService.findByTicket(ticketId).slice(-1)[0],
+        comment: comments.slice(-1)[0],
       });
 
       logger.info({ jobId, ticketId }, 'AI analysis completed');
@@ -130,7 +131,7 @@ class AIAgentService {
       job.error = error instanceof Error ? error.message : 'Unknown error';
       job.updatedAt = new Date();
       
-      const currentTicket = ticketService.findById(ticketId);
+      const currentTicket = await ticketService.findById(ticketId);
       if (currentTicket) {
         broadcast({ 
           type: 'ai_job.updated', 
