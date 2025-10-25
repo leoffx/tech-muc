@@ -1,5 +1,6 @@
+import type { OpencodeClient } from "@opencode-ai/sdk";
+import { rm, stat } from "node:fs/promises";
 import { agentEnvironmentManager } from "~/server/agent/workspace-manager";
-import { getOpencodeClient } from "~/server/agent/opencode";
 import type { AgentClientDescriptor } from "~/server/agent/workspace-manager";
 
 export interface EnsureTicketWorkspaceOptions {
@@ -19,6 +20,7 @@ export interface SpawnPlanClientOptions extends SpawnTicketClientOptions {
   prompt: {
     system: string;
   };
+  opencode: OpencodeClient;
 }
 
 export interface SpawnPlanResult {
@@ -31,6 +33,7 @@ export interface SpawnImplementationClientOptions
   prompt?: {
     system: string;
   };
+  opencode: OpencodeClient;
 }
 
 export interface SpawnImplementationResult {
@@ -77,6 +80,7 @@ export async function finalizeImplementationChanges(options: {
   ticketTitle: string;
   projectTitle: string;
   baseBranch: string;
+  opencode: OpencodeClient;
 }) {
   const workspace = await agentEnvironmentManager.getWorkspace(
     options.ticketId,
@@ -102,6 +106,8 @@ export async function finalizeImplementationChanges(options: {
     throw new Error("Implementation produced no changes to commit.");
   }
 
+  await removeOpencodeArtifacts(workspace.workspacePath);
+
   await workspace.stageAllChanges();
 
   const commitMessage = await generateCommitMessage({
@@ -113,6 +119,8 @@ export async function finalizeImplementationChanges(options: {
     ticketTitle: options.ticketTitle,
     projectTitle: options.projectTitle,
     ticketId: options.ticketId,
+    directory: workspace.workspacePath,
+    opencode: options.opencode,
   });
 
   const commitSha = await workspace.commitStagedChanges(commitMessage);
@@ -127,6 +135,8 @@ export async function finalizeImplementationChanges(options: {
     ticketTitle: options.ticketTitle,
     projectTitle: options.projectTitle,
     baseBranch: options.baseBranch,
+    directory: workspace.workspacePath,
+    opencode: options.opencode,
   });
 
   const pullRequest = await workspace.ensurePullRequest({
@@ -155,13 +165,15 @@ export async function spawnPlanClient(
   const client = await agentEnvironmentManager.spawnClient({
     ...spawnOptions,
     role: "plan",
+    opencode: options.opencode,
   });
 
-  const opencode = await getOpencodeClient();
-
-  const response = await opencode.session.prompt({
+  const response = await options.opencode.session.prompt({
     path: {
       id: client.sessionId,
+    },
+    query: {
+      directory: client.workspacePath,
     },
     body: {
       system: prompt.system,
@@ -196,6 +208,7 @@ export async function spawnImplementationClient(
   const client = await agentEnvironmentManager.spawnClient({
     ...spawnOptions,
     role: "implementation",
+    opencode: options.opencode,
   });
 
   if (!prompt) {
@@ -204,10 +217,12 @@ export async function spawnImplementationClient(
     };
   }
 
-  const opencode = await getOpencodeClient();
-  const response = await opencode.session.prompt({
+  const response = await options.opencode.session.prompt({
     path: {
       id: client.sessionId,
+    },
+    query: {
+      directory: client.workspacePath,
     },
     body: {
       system: prompt.system,
@@ -232,13 +247,6 @@ export async function spawnImplementationClient(
     client,
     initialResponse: acknowledgement,
   };
-}
-
-export async function spawnGeneralClient(options: SpawnTicketClientOptions) {
-  return agentEnvironmentManager.spawnClient({
-    ...options,
-    role: "general",
-  });
 }
 
 function extractTextFromPromptResponse(
@@ -284,8 +292,9 @@ async function generateCommitMessage(options: {
   ticketTitle: string;
   projectTitle: string;
   ticketId: string;
+  directory: string;
+  opencode: OpencodeClient;
 }) {
-  const opencode = await getOpencodeClient();
   const planExcerpt =
     options.plan.length > 2_000
       ? `${options.plan.slice(0, 2_000)}\n\n... (truncated)`
@@ -314,9 +323,12 @@ async function generateCommitMessage(options: {
     wrapAsCodeFence(options.diffStat || "(empty)", ""),
   ].join("\n");
 
-  const response = await opencode.session.prompt({
+  const response = await options.opencode.session.prompt({
     path: {
       id: options.sessionId,
+    },
+    query: {
+      directory: options.directory,
     },
     body: {
       parts: [
@@ -360,8 +372,9 @@ async function generatePullRequestDescription(options: {
   ticketTitle: string;
   projectTitle: string;
   baseBranch: string;
+  directory: string;
+  opencode: OpencodeClient;
 }) {
-  const opencode = await getOpencodeClient();
   const promptText = [
     "Draft a pull request description in Markdown summarizing the implementation progress.",
     "Structure the output with headings: Summary, Changes, Testing, Risks.",
@@ -389,9 +402,12 @@ async function generatePullRequestDescription(options: {
     wrapAsCodeFence(options.diffStat || "(empty)", ""),
   ].join("\n");
 
-  const response = await opencode.session.prompt({
+  const response = await options.opencode.session.prompt({
     path: {
       id: options.sessionId,
+    },
+    query: {
+      directory: options.directory,
     },
     body: {
       parts: [
@@ -408,6 +424,19 @@ async function generatePullRequestDescription(options: {
     response,
     "Pull request description generation failed.",
   );
+}
+
+export async function removeOpencodeArtifacts(workspacePath: string) {
+  const opencodeDir = `${workspacePath}/.opencode`;
+
+  try {
+    const info = await stat(opencodeDir);
+    if (info.isDirectory()) {
+      await rm(opencodeDir, { recursive: true, force: true });
+    }
+  } catch {
+    // ignore cleanup errors
+  }
 }
 
 function wrapAsCodeFence(content: string, language: string) {

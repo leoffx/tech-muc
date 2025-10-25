@@ -4,7 +4,7 @@ import { access, mkdir, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { getOpencodeClient } from "~/server/agent/opencode";
+import type { OpencodeClient } from "@opencode-ai/sdk";
 
 const execFileAsync = promisify(execFile);
 const gitEnvironment = Object.freeze({
@@ -64,6 +64,7 @@ interface SpawnClientInput {
   branch?: string;
   role: AgentClientRole;
   metadata?: Record<string, unknown>;
+  opencode: OpencodeClient;
 }
 
 export class AgentEnvironmentManager {
@@ -110,7 +111,7 @@ export class AgentEnvironmentManager {
 
   async spawnClient(input: SpawnClientInput) {
     const workspace = await this.getOrCreateWorkspaceForClient(input);
-    return workspace.spawnClient(input.role, input.metadata);
+    return workspace.spawnClient(input.role, input.metadata, input.opencode);
   }
 
   async getWorkspace(ticketId: string) {
@@ -258,8 +259,11 @@ class Workspace {
     await runGit(this.cloneArgs());
   }
 
-  async spawnClient(role: AgentClientRole, metadata?: Record<string, unknown>) {
-    const opencode = await getOpencodeClient();
+  async spawnClient(
+    role: AgentClientRole,
+    metadata: Record<string, unknown> | undefined,
+    opencode: OpencodeClient,
+  ) {
     const potentialTitle = metadata?.title;
     const title =
       typeof potentialTitle === "string" && potentialTitle.trim().length > 0

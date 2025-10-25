@@ -1,8 +1,9 @@
+import { mkdir } from "node:fs/promises";
 import { createServer } from "node:net";
+import path from "node:path";
 
 import {
   createOpencode,
-  createOpencodeClient,
   type OpencodeClient,
 } from "@opencode-ai/sdk";
 
@@ -11,59 +12,96 @@ import { env } from "~/env";
 const DEFAULT_PROVIDER_ID = "openai";
 const DEFAULT_LOCAL_PORT = 4096;
 
-let clientPromise: Promise<OpencodeClient> | null = null;
-
-export async function getOpencodeClient() {
-  clientPromise ??= initializeClient().catch((error) => {
-    clientPromise = null;
-    throw error;
-  });
-
-  return clientPromise;
+export interface WorkspaceOpencodeInstance {
+  client: OpencodeClient;
+  close: () => void;
 }
 
-async function initializeClient() {
-  if (env.OPENCODE_ENDPOINT) {
-    const remoteClient = createOpencodeClient({
-      baseUrl: env.OPENCODE_ENDPOINT,
+export async function createWorkspaceOpencodeInstance(
+  workspacePath: string,
+): Promise<WorkspaceOpencodeInstance> {
+  const port = await determineLocalPort();
+  const previousCwd = process.cwd();
+  const previousHome = process.env.OPENCODE_HOME;
+  const previousUserHome = process.env.HOME;
+  const previousXdgConfig = process.env.XDG_CONFIG_HOME;
+  const previousXdgData = process.env.XDG_DATA_HOME;
+  const previousXdgCache = process.env.XDG_CACHE_HOME;
+  const opencodeHome = path.join(workspacePath, ".opencode");
+  const configDir = path.join(opencodeHome, "config");
+  const dataDir = path.join(opencodeHome, "data");
+  const cacheDir = path.join(opencodeHome, "cache");
+
+  await mkdir(opencodeHome, { recursive: true });
+  await Promise.all([
+    mkdir(configDir, { recursive: true }),
+    mkdir(dataDir, { recursive: true }),
+    mkdir(cacheDir, { recursive: true }),
+  ]);
+
+  try {
+    process.chdir(workspacePath);
+    process.env.OPENCODE_HOME = opencodeHome;
+    process.env.HOME = workspacePath;
+    process.env.XDG_CONFIG_HOME = configDir;
+    process.env.XDG_DATA_HOME = dataDir;
+    process.env.XDG_CACHE_HOME = cacheDir;
+    process.env.OPENCODE_SNAPSHOT_DIR = path.join(opencodeHome, "snapshot");
+
+    const { client, server } = await createOpencode({
+      config: {
+        model: env.OPENCODE_MODEL,
+        snapshot: false,
+      },
+      port,
     });
 
-    try {
-      await authenticate(remoteClient);
-      console.info("[OpenCode] Connected to remote endpoint", {
-        endpoint: env.OPENCODE_ENDPOINT,
-      });
-      return remoteClient;
-    } catch (error) {
-      if (!isConnectionError(error)) {
-        throw error;
-      }
+    console.info("[OpenCode] Started local server", {
+      port,
+      workspacePath,
+      home: opencodeHome,
+    });
 
-      console.warn("[OpenCode] Remote endpoint unreachable, starting local instance", {
-        endpoint: env.OPENCODE_ENDPOINT,
-        error: error instanceof Error ? error.message : String(error),
-      });
+    await authenticate(client);
+
+    return {
+      client,
+      close: () => {
+        server.close();
+        console.info("[OpenCode] Closed local server", {
+          workspacePath,
+        });
+      },
+    };
+  } finally {
+    process.chdir(previousCwd);
+    if (previousHome === undefined) {
+      delete process.env.OPENCODE_HOME;
+    } else {
+      process.env.OPENCODE_HOME = previousHome;
     }
+    if (previousUserHome === undefined) {
+      delete process.env.HOME;
+    } else {
+      process.env.HOME = previousUserHome;
+    }
+    if (previousXdgConfig === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
+    } else {
+      process.env.XDG_CONFIG_HOME = previousXdgConfig;
+    }
+    if (previousXdgData === undefined) {
+      delete process.env.XDG_DATA_HOME;
+    } else {
+      process.env.XDG_DATA_HOME = previousXdgData;
+    }
+    if (previousXdgCache === undefined) {
+      delete process.env.XDG_CACHE_HOME;
+    } else {
+      process.env.XDG_CACHE_HOME = previousXdgCache;
+    }
+    delete process.env.OPENCODE_SNAPSHOT_DIR;
   }
-
-  return createLocalClient();
-}
-
-async function createLocalClient() {
-  const port = await determineLocalPort();
-  const { client } = await createOpencode({
-    config: {
-      model: env.OPENCODE_MODEL,
-    },
-    port,
-  });
-
-  console.info("[OpenCode] Started local server", {
-    port,
-  });
-
-  await authenticate(client);
-  return client;
 }
 
 async function authenticate(client: OpencodeClient) {
@@ -119,21 +157,4 @@ function tryListen(port: number) {
       }
     });
   });
-}
-
-function isConnectionError(error: unknown) {
-  if (!(error instanceof Error)) {
-    return false;
-  }
-
-  const message = error.message.toLowerCase();
-  return (
-    message.includes("fetch failed") ||
-    message.includes("econnrefused") ||
-    message.includes("listen") ||
-    message.includes("connect") ||
-    ("code" in error &&
-      typeof (error as NodeJS.ErrnoException).code === "string" &&
-      (error as NodeJS.ErrnoException).code?.toLowerCase().includes("refused"))
-  );
 }
