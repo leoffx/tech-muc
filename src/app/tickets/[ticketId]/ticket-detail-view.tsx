@@ -3,7 +3,6 @@
 import { useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 import { api as convexApi } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -40,7 +39,9 @@ const STATUS_COLORS: Record<TicketStatus, string> = {
 
 export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   const router = useRouter();
-  const ticket = useQuery(convexApi.tickets.get, { ticketId: toTicketId(ticketId) });
+  const ticket = useQuery(convexApi.tickets.get, {
+    ticketId: toTicketId(ticketId),
+  });
   const author = useQuery(
     convexApi.authors.get,
     ticket ? { authorId: ticket.author } : "skip",
@@ -49,15 +50,6 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
     convexApi.projects.get,
     ticket ? { projectId: ticket.projectId } : "skip",
   );
-
-  const createPlan = api.plan.create.useMutation();
-
-  useEffect(() => {
-    if (ticketId) {
-      createPlan.mutate({ ticketId });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticketId]);
 
   if (ticket === undefined) {
     return <TicketDetailSkeleton />;
@@ -114,7 +106,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            <span className="mr-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">
               Status
             </span>
             <span
