@@ -198,6 +198,7 @@ Description: ${description || "No description provided"}
    - Any dependencies or prerequisites
 5. Highlight potential challenges, edge cases, and testing considerations
 6. Follow the existing code patterns and conventions in the repository
+7. Keep the final plan concise—no more than 1000 characters total
 
 Provide a clear, actionable plan in markdown format that a developer can follow to implement this feature.`;
   }
