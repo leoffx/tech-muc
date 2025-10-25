@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as projects from "../projects.js";
 import type * as tickets from "../tickets.js";
 
 import type {
@@ -25,6 +26,7 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  projects: typeof projects;
   tickets: typeof tickets;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

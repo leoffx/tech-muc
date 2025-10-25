@@ -18,4 +18,8 @@ export default defineSchema({
     name: v.string(),
     imageUrl: v.string(),
   }),
+  projects: defineTable({
+    title: v.string(),
+    githubRepoUrl: v.string(),
+  }),
 });
