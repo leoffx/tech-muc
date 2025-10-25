@@ -14,6 +14,7 @@ export default defineSchema({
     ),
     author: v.id("authors"),
     conversation: v.optional(v.object({})),
+    plan: v.optional(v.string()),
   }).index("by_projectId", ["projectId"]),
   authors: defineTable({
     name: v.string(),
