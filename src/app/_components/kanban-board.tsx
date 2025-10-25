@@ -244,8 +244,12 @@ function TicketCardPreview({ ticket }: { ticket: KanbanTicket }) {
 function TicketCardContent({ ticket }: { ticket: KanbanTicket }) {
   return (
     <div>
-      <p className="text-foreground text-sm font-medium">{ticket.title}</p>
-      <p className="text-muted-foreground mt-2 text-xs">{ticket.description}</p>
+      <p className="text-foreground line-clamp-2 text-sm font-medium">
+        {ticket.title}
+      </p>
+      <p className="text-muted-foreground mt-2 line-clamp-3 text-xs">
+        {ticket.description}
+      </p>
     </div>
   );
 }
