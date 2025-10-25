@@ -6,9 +6,19 @@ import { useRouter } from "next/navigation";
 
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { KANBAN_COLUMNS, type TicketStatus } from "~/app/_components/kanban-board";
+import {
+  KANBAN_COLUMNS,
+  type TicketStatus,
+} from "~/app/_components/kanban-board";
+import { MarkdownContent } from "~/app/_components/markdown-content";
 import { Button } from "~/app/_components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/app/_components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/app/_components/ui/card";
 
 type TicketDetailViewProps = {
   ticketId: string;
@@ -28,8 +38,14 @@ const STATUS_COLORS: Record<TicketStatus, string> = {
 export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   const router = useRouter();
   const ticket = useQuery(api.tickets.get, { ticketId: toTicketId(ticketId) });
-  const author = useQuery(api.authors.get, ticket ? { authorId: ticket.author } : "skip");
-  const project = useQuery(api.projects.get, ticket ? { projectId: ticket.projectId } : "skip");
+  const author = useQuery(
+    api.authors.get,
+    ticket ? { authorId: ticket.author } : "skip",
+  );
+  const project = useQuery(
+    api.projects.get,
+    ticket ? { projectId: ticket.projectId } : "skip",
+  );
 
   if (ticket === undefined) {
     return (
@@ -42,8 +58,13 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   if (!ticket) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-4 px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold text-slate-900">Ticket not found</h1>
-        <Link href="/" className="text-sm font-medium text-slate-900 underline underline-offset-4">
+        <h1 className="text-2xl font-semibold text-slate-900">
+          Ticket not found
+        </h1>
+        <Link
+          href="/"
+          className="text-sm font-medium text-slate-900 underline underline-offset-4"
+        >
           Go back to projects
         </Link>
       </div>
@@ -64,11 +85,16 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl font-semibold text-slate-900">{ticket.title}</CardTitle>
+          <CardTitle className="text-3xl font-semibold text-slate-900">
+            {ticket.title}
+          </CardTitle>
           <CardDescription className="flex flex-wrap items-center gap-2 text-sm">
             <span>Project:</span>
             {project ? (
-              <Link href={projectHref} className="font-medium text-slate-900 underline underline-offset-4">
+              <Link
+                href={projectHref}
+                className="font-medium text-slate-900 underline underline-offset-4"
+              >
                 {project.title}
               </Link>
             ) : (
@@ -78,7 +104,9 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Status</span>
+            <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              Status
+            </span>
             <span
               className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${STATUS_COLORS[status]}`}
             >
@@ -87,12 +115,32 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
           </div>
 
           <div className="space-y-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Description</span>
-            <p className="text-sm text-slate-700 whitespace-pre-line">{ticket.description}</p>
+            <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              Description
+            </span>
+            <p className="text-sm whitespace-pre-line text-slate-700">
+              {ticket.description}
+            </p>
           </div>
 
           <div className="space-y-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Author</span>
+            <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              Plan
+            </span>
+            {ticket.plan ? (
+              <MarkdownContent
+                content={ticket.plan}
+                className="rounded-md border border-slate-200 bg-slate-50/80 p-4"
+              />
+            ) : (
+              <p className="text-sm text-slate-500">No plan yet.</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              Author
+            </span>
             {author === undefined ? (
               <p className="text-sm text-slate-500">Loading author…</p>
             ) : author ? (
