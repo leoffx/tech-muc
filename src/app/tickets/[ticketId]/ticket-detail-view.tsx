@@ -52,16 +52,6 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
     ticket ? { projectId: ticket.projectId } : "skip",
   );
 
-  const createImplementation = api.plan.implement.useMutation();
-
-  useEffect(() => {
-    if (ticketId) {
-      // createPlan.mutate({ ticketId });
-      createImplementation.mutate({ ticketId });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticketId]);
-
   if (ticket === undefined) {
     return <TicketDetailSkeleton />;
   }
