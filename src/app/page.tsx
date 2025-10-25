@@ -12,6 +12,7 @@ import { Button } from "./_components/ui/button";
 import { Input } from "./_components/ui/input";
 import { Label } from "./_components/ui/label";
 import { Modal } from "./_components/ui/modal";
+import { Skeleton } from "./_components/ui/skeleton";
 
 export default function Home() {
   const projects = useQuery(api.projects.list);
@@ -75,13 +76,7 @@ export default function Home() {
 
       <section className="grid gap-6">
         {projects === undefined ? (
-          <Card>
-            <CardHeader className="space-y-3">
-              <div className="h-3 w-24 animate-pulse rounded bg-slate-200" />
-              <div className="h-3 w-60 animate-pulse rounded bg-slate-200" />
-              <div className="h-3 w-40 animate-pulse rounded bg-slate-200" />
-            </CardHeader>
-          </Card>
+          <ProjectsSkeleton />
         ) : hasProjects ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((project) => (
@@ -171,5 +166,24 @@ export default function Home() {
         </form>
       </Modal>
     </main>
+  );
+}
+
+function ProjectsSkeleton() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <Card key={index} className="flex h-full flex-col justify-between">
+          <CardHeader className="space-y-4">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </CardHeader>
+          <CardFooter>
+            <Skeleton className="h-10 w-full rounded-md" />
+          </CardFooter>
+        </Card>
+      ))}
+    </div>
   );
 }

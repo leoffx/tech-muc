@@ -19,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/app/_components/ui/card";
+import { Skeleton } from "~/app/_components/ui/skeleton";
 
 type TicketDetailViewProps = {
   ticketId: string;
@@ -48,11 +49,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   );
 
   if (ticket === undefined) {
-    return (
-      <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500">
-        Loading ticket…
-      </div>
-    );
+    return <TicketDetailSkeleton />;
   }
 
   if (!ticket) {
@@ -90,7 +87,9 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
           </CardTitle>
           <CardDescription className="flex flex-wrap items-center gap-2 text-sm">
             <span>Project:</span>
-            {project ? (
+            {project === undefined ? (
+              <Skeleton className="h-4 w-40" />
+            ) : project ? (
               <Link
                 href={projectHref}
                 className="font-medium text-slate-900 underline underline-offset-4"
@@ -98,7 +97,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
                 {project.title}
               </Link>
             ) : (
-              <span className="text-slate-500">Loading project…</span>
+              <span className="text-slate-500">Unknown project</span>
             )}
           </CardDescription>
         </CardHeader>
@@ -142,7 +141,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
               Author
             </span>
             {author === undefined ? (
-              <p className="text-sm text-slate-500">Loading author…</p>
+              <Skeleton className="h-4 w-32" />
             ) : author ? (
               <div className="text-sm text-slate-700">{author.name}</div>
             ) : (
@@ -157,4 +156,50 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
 
 function toTicketId(value: string): Id<"tickets"> {
   return value as Id<"tickets">;
+}
+
+function TicketDetailSkeleton() {
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+
+      <Card>
+        <CardHeader className="space-y-4">
+          <Skeleton className="h-8 w-3/4" />
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-6 w-24 rounded-full" />
+          </div>
+
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-20" />
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-11/12" />
+              <Skeleton className="h-3 w-4/5" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-24 w-full rounded-md" />
+          </div>
+
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-14" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

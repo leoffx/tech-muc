@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "~/app/_components/ui/select";
 import { Textarea } from "~/app/_components/ui/textarea";
+import { Skeleton } from "~/app/_components/ui/skeleton";
 
 type ProjectDetailViewProps = {
   projectId: string;
@@ -139,9 +140,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
     project === undefined || tickets === undefined || authors === undefined;
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500"></div>
-    );
+    return <ProjectDetailSkeleton />;
   }
 
   if (!project) {
@@ -306,6 +305,55 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
         onMoveTicket={handleMoveTicket}
         onTicketClick={handleTicketClick}
       />
+    </div>
+  );
+}
+
+function ProjectDetailSkeleton() {
+  return (
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-3">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-72" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <Skeleton className="h-10 w-32" />
+      </div>
+      <KanbanBoardSkeleton />
+    </div>
+  );
+}
+
+function KanbanBoardSkeleton() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {KANBAN_COLUMNS.map((column) => (
+        <div
+          key={column.id}
+          className="flex min-h-[420px] flex-col rounded-lg border border-slate-200 bg-slate-50 p-4"
+        >
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-36" />
+            </div>
+            <Skeleton className="h-5 w-10 rounded-full" />
+          </div>
+          <div className="mt-4 flex flex-1 flex-col gap-3">
+            {Array.from({ length: 3 }).map((_, ticketIndex) => (
+              <div
+                key={ticketIndex}
+                className="space-y-2 rounded-lg border border-slate-200 bg-white/90 p-4 shadow-sm"
+              >
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
