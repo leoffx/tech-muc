@@ -97,6 +97,10 @@ ticketsRouter.patch('/:id/move', async (req: Request, res: Response) => {
     if (status === 'plan') {
       await aiAgentService.onTicketMovedToPlan(ticket.id);
     }
+
+    if (status === 'in_progress') {
+      await aiAgentService.onTicketMovedToInProgress(ticket.id);
+    }
     
     res.json(ticket);
   } catch (err) {
