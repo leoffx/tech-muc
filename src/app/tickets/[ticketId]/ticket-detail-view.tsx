@@ -3,8 +3,9 @@
 import { useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-import { api } from "../../../../convex/_generated/api";
+import { api as convexApi } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import {
   KANBAN_COLUMNS,
@@ -20,6 +21,7 @@ import {
   CardTitle,
 } from "~/app/_components/ui/card";
 import { Skeleton } from "~/app/_components/ui/skeleton";
+import { api } from "~/trpc/react";
 
 type TicketDetailViewProps = {
   ticketId: string;
@@ -38,15 +40,24 @@ const STATUS_COLORS: Record<TicketStatus, string> = {
 
 export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   const router = useRouter();
-  const ticket = useQuery(api.tickets.get, { ticketId: toTicketId(ticketId) });
+  const ticket = useQuery(convexApi.tickets.get, { ticketId: toTicketId(ticketId) });
   const author = useQuery(
-    api.authors.get,
+    convexApi.authors.get,
     ticket ? { authorId: ticket.author } : "skip",
   );
   const project = useQuery(
-    api.projects.get,
+    convexApi.projects.get,
     ticket ? { projectId: ticket.projectId } : "skip",
   );
+
+  const createPlan = api.plan.create.useMutation();
+
+  useEffect(() => {
+    if (ticketId) {
+      createPlan.mutate({ ticketId });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticketId]);
 
   if (ticket === undefined) {
     return <TicketDetailSkeleton />;

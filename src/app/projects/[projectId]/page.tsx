@@ -1,6 +1,11 @@
 import { ProjectDetailView } from "./project-detail-view";
 
-export default function ProjectPage({ params }: { params: { projectId: string } }) {
-  return <ProjectDetailView projectId={params.projectId} />;
+export default async function ProjectPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const { projectId } = await params;
+  return <ProjectDetailView projectId={projectId} />;
 }
 

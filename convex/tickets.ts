@@ -61,3 +61,15 @@ export const updateStatus = mutation({
     await ctx.db.patch(args.ticketId, { status: args.status });
   },
 });
+
+export const savePlan = mutation({
+  args: {
+    ticketId: v.id("tickets"),
+    plan: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.ticketId, {
+      plan: args.plan,
+    });
+  },
+});
