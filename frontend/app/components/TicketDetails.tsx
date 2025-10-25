@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Ticket } from '../types/kanban';
 
 interface TicketDetailsProps {
@@ -90,7 +92,11 @@ export function TicketDetails({ ticket, onClose, onAddComment }: TicketDetailsPr
                       {new Date(comment.createdAt).toLocaleString()}
                     </span>
                   </div>
-                  <p className="text-gray-700 text-sm">{comment.content}</p>
+                  <div className="text-gray-700 text-sm prose prose-sm max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {comment.content}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               ))}
             </div>
