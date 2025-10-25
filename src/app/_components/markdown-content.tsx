@@ -25,15 +25,23 @@ const markdownComponents: Components = {
     <p className="mb-4 leading-relaxed text-slate-700 last:mb-0" {...props} />
   ),
   ul: ({ node: _node, ...props }) => (
-    <ul className="mb-4 list-disc space-y-2 pl-5 text-slate-700 last:mb-0" {...props} />
+    <ul
+      className="mb-4 list-disc space-y-2 pl-5 text-slate-700 last:mb-0"
+      {...props}
+    />
   ),
   ol: ({ node: _node, ...props }) => (
-    <ol className="mb-4 list-decimal space-y-2 pl-5 text-slate-700 last:mb-0" {...props} />
+    <ol
+      className="mb-4 list-decimal space-y-2 pl-5 text-slate-700 last:mb-0"
+      {...props}
+    />
   ),
-  li: ({ node: _node, ...props }) => <li className="leading-relaxed" {...props} />,
+  li: ({ node: _node, ...props }) => (
+    <li className="leading-relaxed" {...props} />
+  ),
   blockquote: ({ node: _node, ...props }) => (
     <blockquote
-      className="mb-4 border-l-4 border-slate-200 pl-4 italic text-slate-600 last:mb-0"
+      className="mb-4 border-l-4 border-slate-200 pl-4 text-slate-600 italic last:mb-0"
       {...props}
     />
   ),
@@ -59,20 +67,31 @@ const markdownComponents: Components = {
     }
 
     return (
-      <code className={cn("font-mono text-xs text-slate-100", className)} {...props}>
+      <code className={cn("font-mono text-xs", className)} {...props}>
         {children}
       </code>
     );
   },
   a: ({ node: _node, ...props }) => (
-    <a className="font-medium text-blue-700 underline underline-offset-4" {...props} />
+    <a
+      className="font-medium text-blue-700 underline underline-offset-4"
+      {...props}
+    />
   ),
 };
 
 export function MarkdownContent({ content, className }: MarkdownContentProps) {
   return (
-    <div className={cn("space-y-4 text-sm leading-relaxed text-slate-700", className)}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+    <div
+      className={cn(
+        "space-y-4 text-sm leading-relaxed text-slate-700",
+        className,
+      )}
+    >
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={markdownComponents}
+      >
         {content}
       </ReactMarkdown>
     </div>
