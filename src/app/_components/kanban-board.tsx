@@ -164,25 +164,25 @@ function Column({ column, tickets, onTicketClick }: ColumnProps) {
     <div
       ref={setNodeRef}
       className={cn(
-        "flex min-h-[420px] flex-col rounded-lg border border-slate-200 bg-slate-50 p-4 transition",
-        isOver && "border-slate-400 bg-slate-100 shadow-sm",
+        "flex min-h-[420px] flex-col rounded-lg border border-border bg-muted/30 p-4 transition",
+        isOver && "border-primary bg-muted shadow-sm",
       )}
     >
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">
+          <h2 className="text-sm font-semibold text-foreground">
             {column.title}
           </h2>
-          <p className="text-xs text-slate-500">{column.description}</p>
+          <p className="text-xs text-muted-foreground">{column.description}</p>
         </div>
-        <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-700">
+        <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold text-secondary-foreground">
           {tickets.length}
         </span>
       </div>
 
       <div className="mt-4 flex flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto">
         {tickets.length === 0 ? (
-          <p className="rounded-md border border-dashed border-slate-300 bg-white/40 p-4 text-center text-xs text-slate-400">
+          <p className="rounded-md border border-dashed border-border bg-card/40 p-4 text-center text-xs text-muted-foreground">
             Drop tickets here
           </p>
         ) : (
@@ -217,10 +217,10 @@ function DraggableTicketCard({ ticket, onClick }: TicketCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition focus:ring-2 focus:ring-slate-400 focus:outline-none",
+        "rounded-lg border border-border bg-card p-3 text-left shadow-sm transition focus:ring-2 focus:ring-ring focus:outline-none",
         isDragging
           ? "cursor-grab opacity-70 ring-0"
-          : "cursor-pointer hover:border-slate-300",
+          : "cursor-pointer hover:border-primary",
       )}
       onClick={() => {
         if (!isDragging) onClick(ticket._id);
@@ -235,7 +235,7 @@ function DraggableTicketCard({ ticket, onClick }: TicketCardProps) {
 
 function TicketCardPreview({ ticket }: { ticket: KanbanTicket }) {
   return (
-    <div className="cursor-grabbing rounded-lg border border-slate-200 bg-white p-3 text-left shadow-lg">
+    <div className="cursor-grabbing rounded-lg border border-border bg-card p-3 text-left shadow-lg">
       <TicketCardContent ticket={ticket} />
     </div>
   );
@@ -244,8 +244,8 @@ function TicketCardPreview({ ticket }: { ticket: KanbanTicket }) {
 function TicketCardContent({ ticket }: { ticket: KanbanTicket }) {
   return (
     <div>
-      <p className="text-sm font-medium text-slate-900">{ticket.title}</p>
-      <p className="mt-2 text-xs text-slate-500">{ticket.description}</p>
+      <p className="text-sm font-medium text-foreground">{ticket.title}</p>
+      <p className="mt-2 text-xs text-muted-foreground">{ticket.description}</p>
     </div>
   );
 }

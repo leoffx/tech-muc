@@ -61,10 +61,10 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-6 py-12">
-      <section className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <section className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-slate-950">Tech MUC Projects</h1>
-          <p className="max-w-2xl text-slate-600">
+          <h1 className="text-4xl font-bold text-foreground">Tech MUC Projects</h1>
+          <p className="max-w-2xl text-muted-foreground">
             Browse community-built projects and jump straight into their GitHub repositories. Ready to share?
             Publish yours and inspire the next contributor.
           </p>
@@ -88,7 +88,7 @@ export default function Home() {
                       href={project.githubRepoUrl}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className="font-medium text-slate-900 underline hover:text-slate-700"
+                      className="font-medium text-foreground underline hover:text-primary"
                     >
                       {project.githubRepoUrl}
                     </a>
@@ -97,7 +97,7 @@ export default function Home() {
                 <CardFooter>
                   <Link
                     href={`/projects/${project._id}`}
-                    className="inline-flex w-full items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-900/90"
+                    className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
                   >
                     Open kanban
                   </Link>
@@ -155,7 +155,7 @@ export default function Home() {
               type="button"
               onClick={() => setIsModalOpen(false)}
               disabled={isSubmitting}
-              className="bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              className="bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               Cancel
             </Button>

@@ -13,26 +13,26 @@ type MarkdownContentProps = {
 
 const markdownComponents: Components = {
   h1: ({ node: _node, ...props }) => (
-    <h2 className="text-xl font-semibold text-slate-900" {...props} />
+    <h2 className="text-xl font-semibold text-foreground" {...props} />
   ),
   h2: ({ node: _node, ...props }) => (
-    <h3 className="text-lg font-semibold text-slate-900" {...props} />
+    <h3 className="text-lg font-semibold text-foreground" {...props} />
   ),
   h3: ({ node: _node, ...props }) => (
-    <h4 className="text-base font-medium text-slate-900" {...props} />
+    <h4 className="text-base font-medium text-foreground" {...props} />
   ),
   p: ({ node: _node, ...props }) => (
-    <p className="mb-4 leading-relaxed text-slate-700 last:mb-0" {...props} />
+    <p className="mb-4 leading-relaxed text-foreground/80 last:mb-0" {...props} />
   ),
   ul: ({ node: _node, ...props }) => (
     <ul
-      className="mb-4 list-disc space-y-2 pl-5 text-slate-700 last:mb-0"
+      className="mb-4 list-disc space-y-2 pl-5 text-foreground/80 last:mb-0"
       {...props}
     />
   ),
   ol: ({ node: _node, ...props }) => (
     <ol
-      className="mb-4 list-decimal space-y-2 pl-5 text-slate-700 last:mb-0"
+      className="mb-4 list-decimal space-y-2 pl-5 text-foreground/80 last:mb-0"
       {...props}
     />
   ),
@@ -41,22 +41,23 @@ const markdownComponents: Components = {
   ),
   blockquote: ({ node: _node, ...props }) => (
     <blockquote
-      className="mb-4 border-l-4 border-slate-200 pl-4 text-slate-600 italic last:mb-0"
+      className="mb-4 border-l-4 border-border pl-4 text-muted-foreground italic last:mb-0"
       {...props}
     />
   ),
   pre: ({ node: _node, ...props }) => (
     <pre
-      className="mb-4 overflow-x-auto rounded-md bg-slate-950/80 p-4 text-xs text-slate-100 last:mb-0"
+      className="mb-4 overflow-x-auto rounded-md bg-secondary p-4 text-xs text-secondary-foreground last:mb-0"
       {...props}
     />
   ),
-  code: ({ node: _node, inline, className, children, ...props }) => {
-    if (inline) {
+  code: ({ node: _node, className, children, ...props }) => {
+    const isInline = !className?.includes("language-");
+    if (isInline) {
       return (
         <code
           className={cn(
-            "rounded bg-slate-200 px-1 py-0.5 font-mono text-xs text-slate-800",
+            "rounded bg-muted px-1 py-0.5 font-mono text-xs text-foreground",
             className,
           )}
           {...props}
@@ -74,7 +75,7 @@ const markdownComponents: Components = {
   },
   a: ({ node: _node, ...props }) => (
     <a
-      className="font-medium text-blue-700 underline underline-offset-4"
+      className="font-medium text-primary underline underline-offset-4"
       {...props}
     />
   ),
@@ -84,7 +85,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
   return (
     <div
       className={cn(
-        "space-y-4 text-sm leading-relaxed text-slate-700",
+        "space-y-4 text-sm leading-relaxed text-foreground/80",
         className,
       )}
     >

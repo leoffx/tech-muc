@@ -146,12 +146,12 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   if (!project) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-4 px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold text-slate-900">
+        <h1 className="text-2xl font-semibold text-foreground">
           Project not found
         </h1>
         <Link
           href="/"
-          className="text-sm font-medium text-slate-900 underline underline-offset-4"
+          className="text-sm font-medium text-foreground underline underline-offset-4"
         >
           Go back to projects
         </Link>
@@ -164,22 +164,22 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-semibold text-slate-900">
+            <h1 className="text-3xl font-semibold text-foreground">
               {project.title}
             </h1>
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-muted-foreground">
             <span>Repository: </span>
             <Link
               href={project.githubRepoUrl}
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-slate-900 underline underline-offset-4"
+              className="font-medium text-foreground underline underline-offset-4"
             >
               {project.githubRepoUrl}
             </Link>
           </div>
-          <div className="mt-2 text-sm text-slate-500">
+          <div className="mt-2 text-sm text-muted-foreground">
             {kanbanTickets.length} ticket{kanbanTickets.length === 1 ? "" : "s"}
           </div>
         </div>
@@ -276,7 +276,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
                   </SelectContent>
                 </Select>
                 {!hasAuthors ? (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted-foreground">
                     You need at least one author in Convex to create tickets.
                   </p>
                 ) : null}
@@ -331,7 +331,7 @@ function KanbanBoardSkeleton() {
       {KANBAN_COLUMNS.map((column) => (
         <div
           key={column.id}
-          className="flex min-h-[420px] flex-col rounded-lg border border-slate-200 bg-slate-50 p-4"
+          className="flex min-h-[420px] flex-col rounded-lg border border-border bg-muted/30 p-4"
         >
           <div className="flex items-center justify-between">
             <div className="space-y-2">
@@ -344,7 +344,7 @@ function KanbanBoardSkeleton() {
             {Array.from({ length: 3 }).map((_, ticketIndex) => (
               <div
                 key={ticketIndex}
-                className="space-y-2 rounded-lg border border-slate-200 bg-white/90 p-4 shadow-sm"
+                className="space-y-2 rounded-lg border border-border bg-card/90 p-4 shadow-sm"
               >
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-3 w-full" />

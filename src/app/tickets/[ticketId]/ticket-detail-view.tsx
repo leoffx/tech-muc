@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { api as convexApi } from "../../../../convex/_generated/api";
+import { api, api as convexApi } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import {
   KANBAN_COLUMNS,
@@ -20,7 +20,6 @@ import {
   CardTitle,
 } from "~/app/_components/ui/card";
 import { Skeleton } from "~/app/_components/ui/skeleton";
-import { api } from "~/trpc/react";
 
 type TicketDetailViewProps = {
   ticketId: string;
@@ -31,15 +30,17 @@ const statusLabels: Record<TicketStatus, string> = Object.fromEntries(
 ) as Record<TicketStatus, string>;
 
 const STATUS_COLORS: Record<TicketStatus, string> = {
-  todo: "bg-slate-200 text-slate-700",
-  planning: "bg-blue-200 text-blue-800",
-  "in-progress": "bg-amber-200 text-amber-800",
-  done: "bg-emerald-200 text-emerald-800",
+  todo: "bg-secondary text-secondary-foreground",
+  planning: "bg-blue-500/20 text-blue-700 dark:text-blue-300",
+  "in-progress": "bg-amber-500/20 text-amber-700 dark:text-amber-300",
+  done: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300",
 };
 
 export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   const router = useRouter();
-  const ticket = useQuery(convexApi.tickets.get, { ticketId: toTicketId(ticketId) });
+  const ticket = useQuery(convexApi.tickets.get, {
+    ticketId: toTicketId(ticketId),
+  });
   const author = useQuery(
     convexApi.authors.get,
     ticket ? { authorId: ticket.author } : "skip",
@@ -58,12 +59,12 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   if (!ticket) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-4 px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold text-slate-900">
+        <h1 className="text-foreground text-2xl font-semibold">
           Ticket not found
         </h1>
         <Link
           href="/"
-          className="text-sm font-medium text-slate-900 underline underline-offset-4"
+          className="text-foreground text-sm font-medium underline underline-offset-4"
         >
           Go back to projects
         </Link>
@@ -80,13 +81,18 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
         <Button onClick={() => router.push(projectHref)} className="px-3">
           Back to board
         </Button>
-        <span className="text-sm text-slate-500">Ticket #{ticket._id}</span>
+        <span className="text-muted-foreground text-sm">
+          Ticket #{ticket._id}
+        </span>
       </div>
 
-      <Button onClick={() => createPlan.mutate({ ticketId })}> Regenerate Plan</Button>
+      <Button onClick={() => createPlan.mutate({ ticketId })}>
+        {" "}
+        Regenerate Plan
+      </Button>
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl font-semibold text-slate-900">
+          <CardTitle className="text-foreground text-3xl font-semibold">
             {ticket.title}
           </CardTitle>
           <CardDescription className="flex flex-wrap items-center gap-2 text-sm">
@@ -96,18 +102,18 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
             ) : project ? (
               <Link
                 href={projectHref}
-                className="font-medium text-slate-900 underline underline-offset-4"
+                className="text-foreground font-medium underline underline-offset-4"
               >
                 {project.title}
               </Link>
             ) : (
-              <span className="text-slate-500">Unknown project</span>
+              <span className="text-muted-foreground">Unknown project</span>
             )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            <span className="text-muted-foreground mr-1 text-xs font-semibold tracking-wide uppercase">
               Status
             </span>
             <span
@@ -118,38 +124,38 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
           </div>
 
           <div className="space-y-2">
-            <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
               Description
             </span>
-            <p className="text-sm whitespace-pre-line text-slate-700">
+            <p className="text-foreground/80 text-sm whitespace-pre-line">
               {ticket.description}
             </p>
           </div>
 
           <div className="space-y-2">
-            <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
               Plan
             </span>
             {ticket.plan ? (
               <MarkdownContent
                 content={ticket.plan}
-                className="rounded-md border border-slate-200 bg-slate-50/80 p-4"
+                className="border-border bg-muted/50 rounded-md border p-4"
               />
             ) : (
-              <p className="text-sm text-slate-500">No plan yet.</p>
+              <p className="text-muted-foreground text-sm">No plan yet.</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
               Author
             </span>
             {author === undefined ? (
               <Skeleton className="h-4 w-32" />
             ) : author ? (
-              <div className="text-sm text-slate-700">{author.name}</div>
+              <div className="text-foreground/80 text-sm">{author.name}</div>
             ) : (
-              <p className="text-sm text-slate-500">Unknown author</p>
+              <p className="text-muted-foreground text-sm">Unknown author</p>
             )}
           </div>
         </CardContent>
