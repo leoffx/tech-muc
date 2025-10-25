@@ -5,6 +5,7 @@ export default defineSchema({
   tickets: defineTable({
     title: v.string(),
     description: v.string(),
+    projectId: v.id("projects"),
     status: v.union(
       v.literal("todo"),
       v.literal("planning"),
@@ -13,7 +14,7 @@ export default defineSchema({
     ),
     author: v.id("authors"),
     conversation: v.optional(v.object({})),
-  }),
+  }).index("by_projectId", ["projectId"]),
   authors: defineTable({
     name: v.string(),
     imageUrl: v.string(),

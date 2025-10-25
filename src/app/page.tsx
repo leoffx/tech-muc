@@ -1,17 +1,175 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import Link from "next/link";
+import type { FormEvent } from "react";
+import { useState } from "react";
+
+import { useMutation, useQuery } from "convex/react";
+
 import { api } from "../../convex/_generated/api";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./_components/ui/card";
+import { Button } from "./_components/ui/button";
+import { Input } from "./_components/ui/input";
+import { Label } from "./_components/ui/label";
+import { Modal } from "./_components/ui/modal";
 
 export default function Home() {
-  const tickets = useQuery(api.tickets.get);
+  const projects = useQuery(api.projects.list);
+  const createProject = useMutation(api.projects.create);
+
+  const [title, setTitle] = useState("");
+  const [githubRepoUrl, setGithubRepoUrl] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedTitle = title.trim();
+    const trimmedUrl = githubRepoUrl.trim();
+
+    if (!trimmedTitle || !trimmedUrl) {
+      setError("Please provide both a project title and a GitHub repository URL.");
+      return;
+    }
+
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await createProject({
+        title: trimmedTitle,
+        githubRepoUrl: trimmedUrl,
+      });
+      setTitle("");
+      setGithubRepoUrl("");
+      setIsModalOpen(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const hasProjects = (projects?.length ?? 0) > 0;
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setError(null);
+    }
+    setIsModalOpen(open);
+  };
 
   return (
-    <main className="justify-centertext-white flex min-h-screen flex-col items-center">
-      <h1>Tech MUC</h1>
-      {tickets?.map(({ _id, title }) => (
-        <div key={_id}>{title}</div>
-      ))}
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-6 py-12">
+      <section className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold text-slate-950">Tech MUC Projects</h1>
+          <p className="max-w-2xl text-slate-600">
+            Browse community-built projects and jump straight into their GitHub repositories. Ready to share?
+            Publish yours and inspire the next contributor.
+          </p>
+        </div>
+        <Button className="w-full sm:w-auto" onClick={() => setIsModalOpen(true)}>
+          Create a project
+        </Button>
+      </section>
+
+      <section className="grid gap-6">
+        {projects === undefined ? (
+          <Card>
+            <CardHeader className="space-y-3">
+              <div className="h-3 w-24 animate-pulse rounded bg-slate-200" />
+              <div className="h-3 w-60 animate-pulse rounded bg-slate-200" />
+              <div className="h-3 w-40 animate-pulse rounded bg-slate-200" />
+            </CardHeader>
+          </Card>
+        ) : hasProjects ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project) => (
+              <Card key={project._id} className="flex h-full flex-col justify-between transition hover:shadow-md">
+                <CardHeader className="space-y-2">
+                  <CardTitle>{project.title}</CardTitle>
+                  <CardDescription className="truncate">
+                    <a
+                      href={project.githubRepoUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="font-medium text-slate-900 underline hover:text-slate-700"
+                    >
+                      {project.githubRepoUrl}
+                    </a>
+                  </CardDescription>
+                </CardHeader>
+                <CardFooter>
+                  <Link
+                    href={`/projects/${project._id}`}
+                    className="inline-flex w-full items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-900/90"
+                  >
+                    Open kanban
+                  </Link>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>No projects yet</CardTitle>
+              <CardDescription>
+                Share your work with the community by adding your first project.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => setIsModalOpen(true)}>Create a project</Button>
+            </CardContent>
+          </Card>
+        )}
+      </section>
+
+      <Modal
+        open={isModalOpen}
+        onOpenChange={handleOpenChange}
+        title="Create a project"
+        description="Share the project name and its GitHub repository so others can explore it."
+      >
+        <form className="grid gap-4" onSubmit={handleSubmit}>
+          <div className="grid gap-2 text-left">
+            <Label htmlFor="project-title">Project title</Label>
+            <Input
+              id="project-title"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Tech MUC Website"
+              maxLength={120}
+              required
+            />
+          </div>
+          <div className="grid gap-2 text-left">
+            <Label htmlFor="github-url">GitHub repository URL</Label>
+            <Input
+              id="github-url"
+              type="url"
+              value={githubRepoUrl}
+              onChange={(event) => setGithubRepoUrl(event.target.value)}
+              placeholder="https://github.com/tech-muc/website"
+              required
+            />
+          </div>
+          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              disabled={isSubmitting}
+              className="bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Create project"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </main>
   );
 }

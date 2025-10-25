@@ -1,9 +1,63 @@
-import { query } from "./_generated/server";
+import { v } from "convex/values";
+
+import { mutation, query } from "./_generated/server";
+
+const statusEnum = v.union(
+  v.literal("todo"),
+  v.literal("planning"),
+  v.literal("in-progress"),
+  v.literal("done"),
+);
 
 export const get = query({
+  args: { ticketId: v.id("tickets") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.ticketId);
+  },
+});
+
+export const list = query({
   args: {},
   handler: async (ctx) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return await ctx.db.query("tickets").collect();
+  },
+});
+
+export const listByProject = query({
+  args: { projectId: v.id("projects") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("tickets")
+      .withIndex("by_projectId", (q) => q.eq("projectId", args.projectId))
+      .collect();
+  },
+});
+
+export const create = mutation({
+  args: {
+    title: v.string(),
+    description: v.string(),
+    projectId: v.id("projects"),
+    authorId: v.id("authors"),
+    status: statusEnum,
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("tickets", {
+      title: args.title,
+      description: args.description,
+      projectId: args.projectId,
+      status: args.status,
+      author: args.authorId,
+    });
+  },
+});
+
+export const updateStatus = mutation({
+  args: {
+    ticketId: v.id("tickets"),
+    status: statusEnum,
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.ticketId, { status: args.status });
   },
 });

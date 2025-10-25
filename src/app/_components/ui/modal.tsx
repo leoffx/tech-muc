@@ -56,6 +56,9 @@ export function Modal({
     }
   };
 
+  const hasTitle = title !== undefined && title !== null;
+  const hasDescription = description !== undefined && description !== null;
+
   return createPortal(
     open ? (
       <div
@@ -70,14 +73,14 @@ export function Modal({
             className,
           )}
         >
-          {(title || description) && (
+          {(hasTitle || hasDescription) && (
             <header className="space-y-1.5 border-b border-slate-200 px-6 py-4">
-              {typeof title === "string" ? (
+              {hasTitle && typeof title === "string" ? (
                 <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-              ) : (
+              ) : hasTitle ? (
                 title
-              )}
-              {description ? (
+              ) : null}
+              {hasDescription ? (
                 typeof description === "string" ? (
                   <p className="text-sm text-slate-600">{description}</p>
                 ) : (
