@@ -39,9 +39,7 @@ const STATUS_COLORS: Record<TicketStatus, string> = {
 
 export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   const router = useRouter();
-  const ticket = useQuery(convexApi.tickets.get, {
-    ticketId: toTicketId(ticketId),
-  });
+  const ticket = useQuery(convexApi.tickets.get, { ticketId: toTicketId(ticketId) });
   const author = useQuery(
     convexApi.authors.get,
     ticket ? { authorId: ticket.author } : "skip",
@@ -50,6 +48,8 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
     convexApi.projects.get,
     ticket ? { projectId: ticket.projectId } : "skip",
   );
+
+  const createPlan = api.plan.create.useMutation();
 
   if (ticket === undefined) {
     return <TicketDetailSkeleton />;
@@ -83,6 +83,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
         <span className="text-sm text-slate-500">Ticket #{ticket._id}</span>
       </div>
 
+      <Button onClick={() => createPlan.mutate({ ticketId })}> Regenerate Plan</Button>
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-semibold text-slate-900">
@@ -106,7 +107,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <span className="mr-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
               Status
             </span>
             <span

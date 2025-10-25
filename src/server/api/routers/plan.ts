@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { TRPCError } from "@trpc/server";
 import { ConvexHttpClient } from "convex/browser";
 import type { Doc, Id } from "../../../../convex/_generated/dataModel";
@@ -15,6 +16,13 @@ import {
   spawnPlanClient,
 } from "~/server/agent/service";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+
+const promptTemplates = {
+  planSystem: loadPromptTemplate("plan-system.md"),
+  planUser: loadPromptTemplate("plan-user.md"),
+  implementationSystem: loadPromptTemplate("implementation-system.md"),
+  implementationUser: loadPromptTemplate("implementation-user.md"),
+};
 
 export const planRouter = createTRPCRouter({
   create: publicProcedure
@@ -278,8 +286,7 @@ function buildPlanPrompts(input: {
     `Branch: ${input.workspaceBranch ?? "default"}`,
   ];
 
-  const systemPrompt = [
-    "You are the planning agent for the Tech MUC engineering workspace. Craft thoughtful, pragmatic implementation plans.",
+  const dynamicSections = [
     "## Context",
     ...contextLines.map((line) => `- ${line}`),
     "",
@@ -291,32 +298,13 @@ function buildPlanPrompts(input: {
     "",
     "## User Stories",
     userStories,
-    "",
-    "## Remarks",
-    "- Favor incremental, verifiable steps with clear owners and entry/exit criteria.",
-    "- Highlight risky areas, unknowns, or decisions that require stakeholder input.",
-    "- Emphasize how and where to validate the solution (tests, experiments, manual QA).",
-    "- Explicitly outline automated and manual testing you expect engineers to execute; call out gaps if testing is not feasible.",
-    "- Prefer reuse of existing patterns within the codebase over introducing new abstractions.",
-    "- Provide rationale for each major step so engineers and reviewers understand intent.",
-  ]
-    .filter((section) => section !== undefined)
-    .join("\n");
-
-  const userPrompt = [
-    "Produce a Markdown implementation plan tailored to the context above.",
-    "Structure the output with the following headings:",
-    "1. Overview",
-    "2. Key Considerations",
-    "3. Implementation Steps (numbered, each with rationale and verification guidance)",
-    "4. Testing Strategy",
-    "5. Risks & Mitigations",
-    "6. Open Questions / Follow-ups",
-    "",
-    "For every implementation step, reference concrete files, modules, or routes when possible and describe how success will be validated.",
-    "Always dedicate the Testing Strategy section to concrete automated/manual checks; justify any missing coverage.",
-    "Conclude with a succinct checklist summarizing the critical tasks.",
   ].join("\n");
+
+  const systemPrompt = renderTemplate(promptTemplates.planSystem, {
+    DYNAMIC_CONTENT: dynamicSections,
+  });
+
+  const userPrompt = promptTemplates.planUser;
 
   return {
     systemPrompt,
@@ -421,10 +409,7 @@ function buildImplementationPrompts(input: {
     ? wrapAsCodeFence(trimmedPlan, "markdown")
     : "_No plan details were found; fail fast and request a plan._";
 
-  const systemPrompt = [
-    "You are the implementation agent for the Tech MUC engineering workspace.",
-    "You must execute the approved plan exactly, highlighting any blockers before deviating.",
-    "",
+  const dynamicSections = [
     "## Ticket",
     `- ID: ${input.ticket._id}`,
     `- Title: ${input.ticket.title}`,
@@ -438,23 +423,15 @@ function buildImplementationPrompts(input: {
     "",
     "## Implementation Plan",
     planSection,
-    "",
-    "## Operating Principles",
-    "- Follow the plan in order unless a step is blocked; flag blockers immediately.",
-    "- Favor existing patterns and shared components already present in the repository.",
-    "- Ensure all relevant tests are added or updated; call out missing coverage openly.",
-    "- Run automated checks (unit, integration, lint, type-check) before marking work ready; if unavailable, document the verification path.",
-    "- Keep code within the scope of the ticket; avoid opportunistic refactors.",
   ].join("\n");
 
-  const userPrompt = [
-    "Begin implementing the plan now:",
-    "1. Re-state the immediate next action you will take.",
-    "2. Execute the steps methodically, committing after meaningful progress.",
-    `3. Keep the branch \`${input.branchName}\` pushed to origin using \`--force-with-lease\` only if necessary.`,
-    "4. Run and report on relevant tests as you progress; explain any skipped coverage.",
-    "5. Provide status updates and surface any assumptions or risks that appear.",
-  ].join("\n");
+  const systemPrompt = renderTemplate(promptTemplates.implementationSystem, {
+    DYNAMIC_CONTENT: dynamicSections,
+  });
+
+  const userPrompt = renderTemplate(promptTemplates.implementationUser, {
+    BRANCH_NAME: input.branchName,
+  });
 
   return {
     systemPrompt,
@@ -473,4 +450,21 @@ function sanitizeBaseBranch(branch: string | null) {
     return "main";
   }
   return branch.replace(/^origin\//, "");
+}
+
+function loadPromptTemplate(filename: string) {
+  return readFileSync(
+    new URL(`../../agent/prompts/${filename}`, import.meta.url),
+    "utf8",
+  ).trim();
+}
+
+function renderTemplate(
+  template: string,
+  replacements: Record<string, string>,
+) {
+  return Object.entries(replacements).reduce((acc, [key, value]) => {
+    const pattern = new RegExp(`{{\\s*${key}\\s*}}`, "g");
+    return acc.replace(pattern, value);
+  }, template);
 }
