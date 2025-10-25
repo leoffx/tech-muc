@@ -61,14 +61,17 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const projectIdAsId = projectId as Id<"projects">;
 
   const project = useQuery(api.projects.get, { projectId: projectIdAsId });
-  const tickets = useQuery(api.tickets.listByProject, { projectId: projectIdAsId });
+  const tickets = useQuery(api.tickets.listByProject, {
+    projectId: projectIdAsId,
+  });
   const authors = useQuery(api.authors.list);
 
   const createTicket = useMutation(api.tickets.create);
   const updateTicketStatus = useMutation(api.tickets.updateStatus);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formState, setFormState] = useState<CreateTicketFormState>(emptyFormState);
+  const [formState, setFormState] =
+    useState<CreateTicketFormState>(emptyFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDialogChange = (open: boolean) => {
@@ -84,7 +87,9 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
     }
   };
 
-  const handleCreateTicket = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateTicket = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
 
     const { authorId } = formState;
@@ -113,7 +118,10 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
     router.push(`/tickets/${ticketId}`);
   };
 
-  const handleMoveTicket = async (ticketId: Id<"tickets">, status: TicketStatus) => {
+  const handleMoveTicket = async (
+    ticketId: Id<"tickets">,
+    status: TicketStatus,
+  ) => {
     await updateTicketStatus({ ticketId, status });
   };
 
@@ -127,7 +135,8 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   }, [tickets]);
 
   const hasAuthors = (authors?.length ?? 0) > 0;
-  const isLoading = project === undefined || tickets === undefined || authors === undefined;
+  const isLoading =
+    project === undefined || tickets === undefined || authors === undefined;
 
   if (isLoading) {
     return (
@@ -140,8 +149,13 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   if (!project) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-4 px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold text-slate-900">Project not found</h1>
-        <Link href="/" className="text-sm font-medium text-slate-900 underline underline-offset-4">
+        <h1 className="text-2xl font-semibold text-slate-900">
+          Project not found
+        </h1>
+        <Link
+          href="/"
+          className="text-sm font-medium text-slate-900 underline underline-offset-4"
+        >
           Go back to projects
         </Link>
       </div>
@@ -153,7 +167,9 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-semibold text-slate-900">{project.title}</h1>
+            <h1 className="text-3xl font-semibold text-slate-900">
+              {project.title}
+            </h1>
           </div>
           <div className="mt-2 text-sm text-slate-500">
             <span>Repository: </span>
@@ -178,7 +194,9 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create a ticket</DialogTitle>
-              <DialogDescription>Capture the work that needs to happen for this project.</DialogDescription>
+              <DialogDescription>
+                Capture the work that needs to happen for this project.
+              </DialogDescription>
             </DialogHeader>
             <form className="flex flex-col gap-4" onSubmit={handleCreateTicket}>
               <div className="grid gap-2">
@@ -270,7 +288,12 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
               <DialogFooter className="pt-2">
                 <Button
                   type="submit"
-                  disabled={!hasAuthors || isSubmitting || !formState.title.trim() || !formState.description.trim()}
+                  disabled={
+                    !hasAuthors ||
+                    isSubmitting ||
+                    !formState.title.trim() ||
+                    !formState.description.trim()
+                  }
                 >
                   {isSubmitting ? "Creating…" : "Create ticket"}
                 </Button>
@@ -280,7 +303,11 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
         </Dialog>
       </div>
 
-      <KanbanBoard tickets={kanbanTickets} onMoveTicket={handleMoveTicket} onTicketClick={handleTicketClick} />
+      <KanbanBoard
+        tickets={kanbanTickets}
+        onMoveTicket={handleMoveTicket}
+        onTicketClick={handleTicketClick}
+      />
     </div>
   );
 }
