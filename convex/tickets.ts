@@ -58,7 +58,18 @@ export const updateStatus = mutation({
     status: statusEnum,
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.ticketId, { status: args.status });
+    // When moving to "todo", reset agent-related fields
+    if (args.status === "todo") {
+      await ctx.db.patch(args.ticketId, {
+        status: args.status,
+        agentStatus: "not-started",
+        plan: undefined,
+        previewUrl: undefined,
+        pullRequestUrl: undefined,
+      });
+    } else {
+      await ctx.db.patch(args.ticketId, { status: args.status });
+    }
   },
 });
 
