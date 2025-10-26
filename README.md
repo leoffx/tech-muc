@@ -55,7 +55,13 @@ end
 
 ---
 
-## 🎯 Overview
+## 😈 Vulnerability Report
+
+<img src="aikido/vulns.png">
+
+---
+
+## 👀 Overview
 
 Tech MUC streamlines software development by:
 
