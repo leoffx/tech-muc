@@ -34,6 +34,7 @@ import {
 } from "~/app/_components/ui/select";
 import { Textarea } from "~/app/_components/ui/textarea";
 import { Skeleton } from "~/app/_components/ui/skeleton";
+import { api as trpcApi } from "~/trpc/react";
 
 type ProjectDetailViewProps = {
   projectId: string;
@@ -69,6 +70,9 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
 
   const createTicket = useMutation(api.tickets.create);
   const updateTicketStatus = useMutation(api.tickets.updateStatus);
+
+  const createPlan = trpcApi.plan.create.useMutation();
+  const createImplementation = trpcApi.plan.implement.useMutation();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formState, setFormState] =
@@ -124,6 +128,16 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
     status: TicketStatus,
   ) => {
     await updateTicketStatus({ ticketId, status });
+
+    // Trigger planning when moved to planning column
+    if (status === "planning") {
+      createPlan.mutate({ ticketId });
+    }
+
+    // Trigger implementation when moved to in-progress column
+    if (status === "in-progress") {
+      createImplementation.mutate({ ticketId });
+    }
   };
 
   const kanbanTickets: KanbanTicket[] = useMemo(() => {
@@ -161,7 +175,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
+    <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -312,7 +326,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
 
 function ProjectDetailSkeleton() {
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
+    <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-3">
           <Skeleton className="h-8 w-48" />
@@ -328,7 +342,7 @@ function ProjectDetailSkeleton() {
 
 function KanbanBoardSkeleton() {
   return (
-    <div className="grid flex-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid flex-1 grid-cols-4 gap-4">
       {KANBAN_COLUMNS.map((column) => (
         <div
           key={column.id}

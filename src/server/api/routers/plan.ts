@@ -15,6 +15,7 @@ import {
   removeOpencodeArtifacts,
   spawnImplementationClient,
   spawnPlanClient,
+  subscribeToLogs,
 } from "~/server/agent/service";
 import { createWorkspaceOpencodeInstance } from "~/server/agent/opencode";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
@@ -56,6 +57,11 @@ export const planRouter = createTRPCRouter({
         });
       }
 
+      await convex.mutation(api.tickets.updateAgentStatus, {
+        ticketId,
+        agentStatus: "in-progress",
+      });
+
       const repoUrl = project.githubRepoUrl;
       if (!isSupportedGitUrl(repoUrl)) {
         throw new TRPCError({
@@ -76,14 +82,20 @@ export const planRouter = createTRPCRouter({
         workspaceBranch: workspace.branch ?? null,
       });
 
-      const opencodeInstance = await createWorkspaceOpencodeInstance(workspace.workspacePath);
+      const opencodeInstance = await createWorkspaceOpencodeInstance(
+        workspace.workspacePath,
+      );
       try {
-        // Set agent status to in-progress when starting
-        await convex.mutation(api.tickets.updateAgentStatus, {
-          ticketId,
-          agentStatus: "in-progress",
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        subscribeToLogs(opencodeInstance.client).catch((error) => {
+          console.error(
+            "[PlanRouter] Failed to subscribe to opencode logs for planning",
+            {
+              ticketId: input.ticketId,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          );
         });
-
         const planResult = await spawnPlanClient({
           ticketId: input.ticketId,
           repoUrl: workspace.repoUrl,
@@ -102,6 +114,8 @@ export const planRouter = createTRPCRouter({
           },
           opencode: opencodeInstance.client,
         });
+
+        console.log("[PlanRouter] Generated plan for ticket", planResult);
 
         await convex.mutation(api.tickets.savePlan, {
           ticketId,
@@ -125,24 +139,34 @@ export const planRouter = createTRPCRouter({
         };
       } catch (error) {
         // Set agent status to failed on error
-        await convex.mutation(api.tickets.updateAgentStatus, {
-          ticketId,
-          agentStatus: "failed",
-        }).catch((updateError) => {
-          console.warn("[PlanRouter] Failed to update agent status to failed", {
-            ticketId: input.ticketId,
-            error: updateError instanceof Error ? updateError.message : String(updateError),
+        await convex
+          .mutation(api.tickets.updateAgentStatus, {
+            ticketId,
+            agentStatus: "failed",
+          })
+          .catch((updateError) => {
+            console.warn(
+              "[PlanRouter] Failed to update agent status to failed",
+              {
+                ticketId: input.ticketId,
+                error:
+                  updateError instanceof Error
+                    ? updateError.message
+                    : String(updateError),
+              },
+            );
           });
-        });
         throw error;
       } finally {
         opencodeInstance.close();
-        await removeOpencodeArtifacts(workspace.workspacePath).catch((error) => {
-          console.warn("[PlanRouter] Failed to cleanup opencode artifacts", {
-            workspacePath: workspace.workspacePath,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        });
+        await removeOpencodeArtifacts(workspace.workspacePath).catch(
+          (error) => {
+            console.warn("[PlanRouter] Failed to cleanup opencode artifacts", {
+              workspacePath: workspace.workspacePath,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          },
+        );
       }
     }),
   implement: publicProcedure
@@ -202,9 +226,7 @@ export const planRouter = createTRPCRouter({
         branchName,
         baseRef: workspace.branch ?? undefined,
       });
-      const baseBranch = sanitizeBaseBranch(
-        (preparedWorkspace.branch ?? null),
-      );
+      const baseBranch = sanitizeBaseBranch(preparedWorkspace.branch ?? null);
 
       const systemPrompt = buildImplementationPrompt({
         ticket,
@@ -213,7 +235,9 @@ export const planRouter = createTRPCRouter({
         branchName,
       });
 
-      const opencodeInstance = await createWorkspaceOpencodeInstance(workspace.workspacePath);
+      const opencodeInstance = await createWorkspaceOpencodeInstance(
+        workspace.workspacePath,
+      );
       try {
         // Set agent status to in-progress when starting implementation
         await convex.mutation(api.tickets.updateAgentStatus, {
@@ -296,24 +320,34 @@ export const planRouter = createTRPCRouter({
         };
       } catch (error) {
         // Set agent status to failed on error
-        await convex.mutation(api.tickets.updateAgentStatus, {
-          ticketId,
-          agentStatus: "failed",
-        }).catch((updateError) => {
-          console.warn("[PlanRouter] Failed to update agent status to failed", {
-            ticketId: input.ticketId,
-            error: updateError instanceof Error ? updateError.message : String(updateError),
+        await convex
+          .mutation(api.tickets.updateAgentStatus, {
+            ticketId,
+            agentStatus: "failed",
+          })
+          .catch((updateError) => {
+            console.warn(
+              "[PlanRouter] Failed to update agent status to failed",
+              {
+                ticketId: input.ticketId,
+                error:
+                  updateError instanceof Error
+                    ? updateError.message
+                    : String(updateError),
+              },
+            );
           });
-        });
         throw error;
       } finally {
         opencodeInstance.close();
-        await removeOpencodeArtifacts(workspace.workspacePath).catch((error) => {
-          console.warn("[PlanRouter] Failed to cleanup opencode artifacts", {
-            workspacePath: workspace.workspacePath,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        });
+        await removeOpencodeArtifacts(workspace.workspacePath).catch(
+          (error) => {
+            console.warn("[PlanRouter] Failed to cleanup opencode artifacts", {
+              workspacePath: workspace.workspacePath,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          },
+        );
       }
     }),
 });

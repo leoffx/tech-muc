@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -81,8 +82,13 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
       <div className="flex items-center gap-2">
-        <Button onClick={() => router.push(projectHref)} className="px-3">
-          Back to board
+        <Button
+          onClick={() => router.push(projectHref)}
+          className="h-9 w-9 p-0"
+          aria-label="Back to board"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="sr-only">Back to board</span>
         </Button>
         <span className="text-muted-foreground text-sm">
           Ticket #{ticket._id}
