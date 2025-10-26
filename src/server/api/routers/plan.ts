@@ -246,7 +246,7 @@ export const planRouter = createTRPCRouter({
       });
       const baseBranch = sanitizeBaseBranch(preparedWorkspace.branch ?? null);
 
-      const systemPrompt = buildImplementationPrompt({
+      const { system, user } = buildImplementationPrompt({
         ticket,
         project,
         plan: ticket.plan,
@@ -271,7 +271,8 @@ export const planRouter = createTRPCRouter({
             baseBranch,
           },
           prompt: {
-            system: systemPrompt,
+            system,
+            user,
           },
           opencode: opencodeInstance.client,
         });
@@ -283,6 +284,7 @@ export const planRouter = createTRPCRouter({
           sessionId: implementation.client.sessionId,
           ticketTitle: ticket.title,
           projectTitle: project.title,
+          projectId: project._id,
           baseBranch,
           opencode: opencodeInstance.client,
         }).catch((error: unknown) => {
@@ -310,6 +312,14 @@ export const planRouter = createTRPCRouter({
           });
         }
 
+        if (finalization.preview?.commitUrl) {
+          console.info("[PlanRouter] Preview deployment completed", {
+            ticketId: input.ticketId,
+            commitUrl: finalization.preview.commitUrl,
+            latestUrl: finalization.preview.latestUrl ?? null,
+          });
+        }
+
         // Set agent status to completed after successful implementation
         await convex.mutation(api.tickets.updateAgentStatus, {
           ticketId,
@@ -329,6 +339,7 @@ export const planRouter = createTRPCRouter({
           },
           commit: finalization.commit,
           pullRequest: finalization.pullRequest,
+          preview: finalization.preview,
         };
       } catch (error) {
         // Set agent status to failed on error
@@ -458,31 +469,17 @@ function buildImplementationPrompt(input: {
   plan: string;
   branchName: string;
 }) {
-  const trimmedPlan = input.plan.trim();
-  const planSection = trimmedPlan
-    ? wrapAsCodeFence(trimmedPlan, "markdown")
-    : "_No plan details were found; fail fast and request a plan._";
-
-  const dynamicSections = [
-    "## Ticket",
-    `- ID: ${input.ticket._id}`,
-    `- Title: ${input.ticket.title}`,
-    `- Project: ${input.project.title}`,
-    `- Status: ${input.ticket.status}`,
-    "",
-    "## Branch Policy",
-    `- Work exclusively on the branch \`${input.branchName}\`.`,
-    "- Commit frequently with descriptive messages tied to plan steps.",
-    "- After finishing, ensure the branch is pushed and up to date on origin.",
-    "",
-    "## Implementation Plan",
-    planSection,
-  ].join("\n");
-
-  return renderTemplate(promptTemplates.implementation, {
-    DYNAMIC_CONTENT: dynamicSections,
+  const systemPrompt = renderTemplate(promptTemplates.implementation, {
+    DYNAMIC_CONTENT: "",
     BRANCH_NAME: input.branchName,
   });
+
+  const userPrompt = input.plan.trim();
+
+  return {
+    system: systemPrompt,
+    user: userPrompt,
+  };
 }
 
 function wrapAsCodeFence(content: string, language: string) {

@@ -1,7 +1,10 @@
 import type { OpencodeClient } from "@opencode-ai/sdk";
 import { rm, stat } from "node:fs/promises";
 import { agentEnvironmentManager } from "~/server/agent/workspace-manager";
-import type { AgentClientDescriptor } from "~/server/agent/workspace-manager";
+import type {
+  AgentClientDescriptor,
+  PreviewDeploymentResult,
+} from "~/server/agent/workspace-manager";
 
 export interface EnsureTicketWorkspaceOptions {
   ticketId: string;
@@ -33,7 +36,7 @@ export interface SpawnImplementationClientOptions
   extends SpawnTicketClientOptions {
   prompt?: {
     system: string;
-    user?: string;
+    user: string;
   };
   opencode: OpencodeClient;
 }
@@ -81,6 +84,7 @@ export async function finalizeImplementationChanges(options: {
   sessionId: string;
   ticketTitle: string;
   projectTitle: string;
+  projectId: string;
   baseBranch: string;
   opencode: OpencodeClient;
 }) {
@@ -156,12 +160,17 @@ export async function finalizeImplementationChanges(options: {
     branchName: options.branchName,
     baseBranch: options.baseBranch,
   });
+  const preview: PreviewDeploymentResult | null = await workspace.deployPreview({
+    projectId: options.projectId,
+    ticketId: options.ticketId,
+  });
 
   return {
     statusSummary,
     diffStat,
     commit: commitSummary,
     pullRequest,
+    preview,
   };
 }
 
@@ -232,17 +241,20 @@ export async function spawnImplementationClient(
     },
     body: {
       system: prompt.system,
-      parts: prompt.user
-        ? [
-            {
-              type: "text",
-              text: prompt.user,
-            },
-          ]
-        : [],
+      parts: [
+        {
+          type: "text",
+          text: prompt.user,
+        },
+      ],
     },
     throwOnError: true,
   });
+
+  console.log(
+    "[Implementation] Initial prompt response received for session",
+    client.sessionId,
+  );
 
   const acknowledgement = extractTextFromPromptResponse(
     response,
