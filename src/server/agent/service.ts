@@ -19,6 +19,7 @@ export interface SpawnTicketClientOptions {
 export interface SpawnPlanClientOptions extends SpawnTicketClientOptions {
   prompt: {
     system: string;
+    user: string;
   };
   opencode: OpencodeClient;
 }
@@ -32,6 +33,7 @@ export interface SpawnImplementationClientOptions
   extends SpawnTicketClientOptions {
   prompt?: {
     system: string;
+    user?: string;
   };
   opencode: OpencodeClient;
 }
@@ -183,14 +185,12 @@ export async function spawnPlanClient(
     },
     body: {
       system: prompt.system,
-      parts: prompt.user
-        ? [
-            {
-              type: "text",
-              text: prompt.user,
-            },
-          ]
-        : [],
+      parts: [
+        {
+          type: "text",
+          text: prompt.user,
+        },
+      ],
     },
     throwOnError: true,
   });

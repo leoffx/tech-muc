@@ -69,7 +69,7 @@ export const planRouter = createTRPCRouter({
         repoUrl,
       });
 
-      const systemPrompt = buildPlanPrompt({
+      const userPrompt = buildPlanPrompt({
         ticket,
         project,
         workspaceRepoUrl: workspace.repoUrl,
@@ -91,7 +91,8 @@ export const planRouter = createTRPCRouter({
             projectTitle: project.title,
           },
           prompt: {
-            system: systemPrompt,
+            system: promptTemplates.plan,
+            user: userPrompt,
           },
           opencode: opencodeInstance.client,
         });
@@ -178,7 +179,7 @@ export const planRouter = createTRPCRouter({
         baseRef: workspace.branch ?? undefined,
       });
       const baseBranch = sanitizeBaseBranch(
-        (preparedWorkspace.branch ?? null) as string | null,
+        (preparedWorkspace.branch ?? null),
       );
 
       const systemPrompt = buildImplementationPrompt({
@@ -311,12 +312,12 @@ function buildPlanPrompt(input: {
     `Branch: ${input.workspaceBranch ?? "default"}`,
   ];
 
-  const dynamicSections = [
+  return [
     "## Context",
     ...contextLines.map((line) => `- ${line}`),
     "",
     "### Ticket Description",
-    indentBlock(input.ticket.description || "No description provided."),
+    indentBlock(input.ticket.description ?? "No description provided."),
     "",
     "## Acceptance Criteria",
     acceptanceCriteria,
@@ -324,10 +325,6 @@ function buildPlanPrompt(input: {
     "## User Stories",
     userStories,
   ].join("\n");
-
-  return renderTemplate(promptTemplates.plan, {
-    DYNAMIC_CONTENT: dynamicSections,
-  });
 }
 
 function formatAcceptanceCriteria(ticket: Doc<"tickets">) {
