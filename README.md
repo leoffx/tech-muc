@@ -1,75 +1,131 @@
 # Tech MUC
 
-AI-powered project management and ticket automation system.
+**AI-Powered Project Management and Ticket Automation System**
 
-## Quick Start
+This is an intelligent project management platform that combines real-time collaboration with AI-driven development automation. Built for the modern development workflow, it enables teams to plan, track, and automatically implement features through natural language ticket descriptions.
 
-**New to the project?** See [GETTING_STARTED.md](./GETTING_STARTED.md) for a detailed walkthrough.
+---
 
-### TL;DR
+## 🎯 Overview
+
+Tech MUC streamlines software development by:
+
+- **AI Agent Automation**: Automatically implements tickets using OpenCode AI agents
+- **Real-Time Collaboration**: Live updates via Convex backend
+- **Preview Deployments**: Automatic static build previews for every implementation
+- **GitHub Integration**: Creates pull requests automatically from completed work
+- **Project Management**: Kanban-style boards with drag-and-drop ticket organization
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Node.js** 20+ and npm 10+
+- **Convex Account**: [Sign up at convex.dev](https://convex.dev)
+- **OpenAI API Key**: [Get from platform.openai.com](https://platform.openai.com)
+- **AWS S3** (optional): For preview deployments
+- **GitHub Token** (optional): For automatic PR creation
+
+### Installation
 
 ```bash
-# 1. Install and deploy Convex
+# 1. Clone the repository
+git clone https://github.com/leoffx/tech-muc.git
+cd tech-muc
+
+# 2. Install dependencies
 npm install
+
+# 3. Deploy Convex backend
 npx convex deploy --yes
+# Follow prompts to create/select your Convex project
 
-# 2. Configure
+# 4. Configure environment variables
 cp .env.example .env
-# Edit .env with your CONVEX_URL and OPENAI_API_KEY
-
-# 3. Run
-./deploy.sh
-# Or: docker-compose up -d
+# Edit .env with your credentials:
+# - CONVEX_URL (from Convex dashboard)
+# - OPENAI_API_KEY (for AI agent)
+# - GH_TOKEN (optional, for GitHub PR creation)
+# - PREVIEW_BUCKET, PREVIEW_REGION (optional, for S3 previews)
 ```
 
-Visit **http://localhost:9000**
+Visit **http://localhost:9000** (production) or **http://localhost:3000** (development).
 
-### Development
+---
 
-```bash
-# Local development (without Docker)
-npm run dev
+## 🏗️ Architecture
 
-# Build preview artifact + upload to S3 (manual helper)
-npm run preview:deploy -- --ticket TCK-123
-# Optional: override defaults
-npm run preview:deploy -- --project tech-muc --ticket TCK-123 --build-command "npm run build"
+### Project Structure
 
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-
-# Rebuild
-docker-compose up -d --build
+```
+tech-muc/
+├── src/
+│   ├── app/                      # Next.js App Router pages
+│   │   ├── _components/          # Shared UI components
+│   │   ├── projects/             # Projects routes
+│   │   ├── tickets/              # Tickets routes
+│   │   └── api/                  # API routes
+│   ├── server/                   # tRPC server
+│   │   ├── api/routers/          # tRPC routers
+│   │   └── agent/                # OpenCode AI integration
+│   ├── lib/                      # Utilities and helpers
+│   ├── trpc/                     # tRPC client setup
+│   └── styles/                   # Global styles
+├── convex/                       # Convex backend
+│   ├── schema.ts                 # Database schema
+│   ├── tickets.ts                # Ticket operations
+│   ├── projects.ts               # Project operations
+│   └── authors.ts                # Author operations
+├── public/                       # Static assets
+├── scripts/                      # Build/deployment scripts
+└── docker-compose.yml            # Production container config
 ```
 
-## Documentation
+---
 
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Detailed deployment guide
-- **[DOCKER.md](./DOCKER.md)** - Docker configuration details
-- **[AGENTS.md](./AGENTS.md)** - Repository guidelines and coding standards
+## 🤖 AI Agent Workflow
 
-## Environment Variables
+### 1. Planning Phase
 
-Required:
-- `CONVEX_URL` - Your Convex deployment URL
-- `OPENAI_API_KEY` - OpenAI API key
+User creates a ticket with description → AI agent analyzes requirements → Generates implementation plan (markdown) → Saves to `ticket.plan`
 
-Optional:
-- `GH_TOKEN` - GitHub token for PR creation
-- `OPENCODE_MODEL` - OpenCode model (default: openai/gpt-5-codex)
-- `OPENCODE_ENDPOINT` - Custom OpenCode endpoint
-- `PREVIEW_BUCKET` - S3 bucket for preview artifacts (default: tech-munich)
-- `PREVIEW_REGION` - AWS region for the preview bucket (default: eu-central-1)
-- `PREVIEW_WEBSITE_BASE_URL` - Optional website endpoint if different from the default S3 URL
+### 2. Implementation Phase
 
-## Preview Deployments
+Agent executes plan → Writes code in linked GitHub repository → Runs tests and checks → Builds static preview
 
-The implementation agent now builds and uploads static previews automatically once it finishes a ticket.
+### 3. Preview Deployment
 
-- Set `PREVIEW_BUCKET` and `PREVIEW_REGION` in your environment as needed (defaults: `tech-munich` / `eu-central-1`). Optionally set `PREVIEW_WEBSITE_BASE_URL` if you front S3 with a custom domain.
-- Every repository only needs a build script that emits static files into `dist/` (e.g. `npm run build` or `npm run preview:build`). The agent prefers a `preview:build` script when present and falls back to `build`.
-- On successful runs, artifacts are synced to `s3://<bucket>/<project_id>/<ticket_id>/<commit>/` and mirrored to `/latest/`; the commit and latest URLs are logged alongside the agent response.
-- For manual verification you can still run `npm run preview:build` locally and sync with your own tooling before invoking `opencode`.
+Builds project (`npm run preview:build`) → Uploads to S3 bucket → Stores URL in `ticket.previewUrl` → Creates `/latest/` mirror
+
+### 4. PR Creation
+
+Creates GitHub PR with changes → Links PR URL to `ticket.pullRequestUrl` → Marks ticket as done
+
+---
+
+## 🔒 Environment Variables
+
+### Required
+
+```env
+CONVEX_URL=https://your-deployment.convex.cloud
+OPENAI_API_KEY=sk-...
+```
+
+### Optional
+
+```env
+# GitHub Integration
+GH_TOKEN=ghp_...                              # For automatic PR creation
+
+# OpenCode Configuration
+OPENCODE_MODEL=openai/gpt-5-codex             # Default AI model
+OPENCODE_ENDPOINT=https://custom.endpoint     # Override OpenCode API
+
+# Preview Deployments
+PREVIEW_BUCKET=tech-munich                    # S3 bucket name
+PREVIEW_REGION=eu-central-1                   # AWS region
+PREVIEW_WEBSITE_BASE_URL=https://previews.example.com  # Custom domain
+```
