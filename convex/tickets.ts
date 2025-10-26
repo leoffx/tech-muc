@@ -76,7 +76,8 @@ export const savePlan = mutation({
 
 const agentStatusEnum = v.union(
   v.literal("not-started"),
-  v.literal("in-progress"),
+  v.literal("planning"),
+  v.literal("implementing"),
   v.literal("completed"),
   v.literal("failed"),
 );

@@ -4,7 +4,8 @@ import { cn } from "~/lib/utils";
 
 export type AgentStatus =
   | "not-started"
-  | "in-progress"
+  | "planning"
+  | "implementing"
   | "completed"
   | "failed"
   | undefined;
@@ -29,8 +30,14 @@ const STATUS_CONFIG: Record<
       "bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-500/30",
     icon: "○",
   },
-  "in-progress": {
-    label: "Agent Working",
+  planning: {
+    label: "Agent Planning",
+    colorClasses:
+      "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30 animate-pulse",
+    icon: "◐",
+  },
+  implementing: {
+    label: "Agent Implementing",
     colorClasses:
       "bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30 animate-pulse",
     icon: "◐",
@@ -73,7 +80,7 @@ export function AgentStatusBadge({
       <span
         className={cn(
           "transition-transform duration-300",
-          status === "in-progress" && "animate-spin",
+          (status === "planning" || status === "implementing") && "animate-spin",
         )}
       >
         {config.icon}

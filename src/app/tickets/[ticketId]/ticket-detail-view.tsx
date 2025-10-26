@@ -131,7 +131,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
 
   const ticketContent = (
     <div
-      className={`flex flex-col gap-6 ${hasPreview ? "px-6 py-10" : "mx-auto max-w-3xl px-6 py-10"}`}
+      className={`flex flex-col gap-6 ${hasPreview ? "px-6 py-10" : "mx-auto max-w-6xl px-6 py-10"}`}
     >
       <div className="flex items-center gap-2">
         <Button
@@ -214,11 +214,19 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
                 </Button>
                 <MarkdownContent
                   content={ticket.plan}
-                  className="border-border bg-muted/50 rounded-md border p-4"
+                  className={`border-border bg-muted/50 rounded-md border p-4 ${ticket.agentStatus === "planning" ? "animate-pulse" : ""}`}
                 />
               </div>
             ) : (
-              <p className="text-muted-foreground text-sm">No plan yet.</p>
+              <div
+                className={`border-border bg-muted/50 rounded-md border p-4 ${ticket.agentStatus === "planning" ? "animate-pulse" : ""}`}
+              >
+                <p className="text-muted-foreground text-sm">
+                  {ticket.agentStatus === "planning"
+                    ? "Agent is creating a plan..."
+                    : "No plan yet."}
+                </p>
+              </div>
             )}
           </div>
 
@@ -281,7 +289,7 @@ function toTicketId(value: string): Id<"tickets"> {
 
 function TicketDetailSkeleton() {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-10">
       <div className="flex items-center gap-2">
         <Skeleton className="h-10 w-32" />
         <Skeleton className="h-4 w-24" />
