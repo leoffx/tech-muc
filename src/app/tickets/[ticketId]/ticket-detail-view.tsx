@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, Send } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
@@ -22,6 +22,7 @@ import {
   CardTitle,
 } from "~/app/_components/ui/card";
 import { Skeleton } from "~/app/_components/ui/skeleton";
+import { Textarea } from "~/app/_components/ui/textarea";
 import { api } from "~/trpc/react";
 import { AgentStatusBadge } from "~/app/_components/agent-status-badge";
 
@@ -213,7 +214,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
                   <RefreshCw className="h-3.5 w-3.5" />
                 </Button>
                 <MarkdownContent
-                  content={ticket.plan}
+                  content={ticket.plan || ""}
                   className={`border-border bg-muted/50 rounded-md border p-4 ${ticket.agentStatus === "planning" ? "animate-pulse" : ""}`}
                 />
               </div>
@@ -242,6 +243,18 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
               <p className="text-muted-foreground text-sm">Unknown author</p>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="py-6 pb-0">
+        <CardContent className="relative">
+          <Textarea
+            placeholder="Describe the changes you want to make"
+            className="min-h-[100px] resize-y"
+          />
+          <Button className="absolute right-10 bottom-8">
+            <Send className="h-4 w-4" />
+          </Button>
         </CardContent>
       </Card>
     </div>
