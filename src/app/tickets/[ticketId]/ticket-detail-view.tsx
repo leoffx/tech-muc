@@ -78,9 +78,10 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
 
   const status: TicketStatus = ticket.status;
   const projectHref = `/projects/${ticket.projectId}`;
+  const hasPreview = Boolean(ticket.previewUrl);
 
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
+  const ticketContent = (
+    <div className={`flex flex-col gap-6 ${hasPreview ? "px-6 py-10" : "mx-auto max-w-3xl px-6 py-10"}`}>
       <div className="flex items-center gap-2">
         <Button
           onClick={() => router.push(projectHref)}
@@ -176,6 +177,28 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
       </Card>
     </div>
   );
+
+  if (hasPreview) {
+    return (
+      <div className="flex h-screen w-full">
+        {/* Preview iframe on the left */}
+        <div className="w-1/2 border-r">
+          <iframe
+            src={ticket.previewUrl}
+            className="h-full w-full"
+            title="Preview"
+          />
+        </div>
+
+        {/* Ticket details on the right */}
+        <div className="w-1/2 overflow-y-auto">
+          {ticketContent}
+        </div>
+      </div>
+    );
+  }
+
+  return <div className="w-full">{ticketContent}</div>;
 }
 
 function toTicketId(value: string): Id<"tickets"> {
