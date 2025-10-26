@@ -20,10 +20,24 @@ import {
 import { createWorkspaceOpencodeInstance } from "~/server/agent/opencode";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
-const promptTemplates = {
-  plan: loadPromptTemplate("plan-system.md"),
-  implementation: loadPromptTemplate("implementation-system.md"),
-};
+function loadPlanPrompt() {
+  return readFileSync(
+    new URL(`../../agent/prompts/plan-system.md`, import.meta.url),
+    "utf8",
+  ).trim();
+}
+
+function loadImplPrompt() {
+  return readFileSync(
+    new URL(`../../agent/prompts/implementation-system.md`, import.meta.url),
+    "utf8",
+  ).trim();
+}
+
+const promptTemplates = Object.freeze({
+  plan: loadPlanPrompt(),
+  implementation: loadImplPrompt(),
+});
 
 export const planRouter = createTRPCRouter({
   create: publicProcedure
@@ -86,7 +100,6 @@ export const planRouter = createTRPCRouter({
         workspace.workspacePath,
       );
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         subscribeToLogs(opencodeInstance.client).catch((error) => {
           console.error(
             "[PlanRouter] Failed to subscribe to opencode logs for planning",
@@ -550,13 +563,6 @@ function sanitizeBaseBranch(branch: string | null) {
     return "main";
   }
   return branch.replace(/^origin\//, "");
-}
-
-function loadPromptTemplate(filename: string) {
-  return readFileSync(
-    new URL(`../../agent/prompts/${filename}`, import.meta.url),
-    "utf8",
-  ).trim();
 }
 
 function renderTemplate(

@@ -1,4 +1,4 @@
-I need you to analyze the following codebase and create a detailed implementation plan for the asked feaure.
+I need you to analyze the following codebase and create a detailed implementation plan in Markdown for the asked feaure.
 
 Structure your plan as follows:
 
@@ -22,6 +22,7 @@ Structure your plan as follows:
 
 Guidelines:
 
+- Use Markdown formating
 - Keep bullet points SHORT (one line, max two lines if complex) = 10 to 20 WORDS per bullet point
 - Focus on WHAT needs to happen, not HOW to code it
 - DO NOT make any actual change to the code. Right now you are running in READ-ONLY mode
