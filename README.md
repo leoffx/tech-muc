@@ -26,7 +26,7 @@ end
 
     subgraph Workers["Isolated Workers"]
         MicroVMs["MicroVM Based Workers<br/>(Horizontally Scalable)"]
-        WorkerOpenCode["OpenCode Instance<br/>(Plan & Run Implementation)"]
+        WorkerOpenCode["OpenAI API + OpenCode Instance<br/>(Plan & Run Implementation)"]
     end
 
     App --> tRPC
