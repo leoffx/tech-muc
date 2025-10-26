@@ -6,6 +6,55 @@ This is an intelligent project management platform that combines real-time colla
 
 ---
 
+## 🎯 Target Architecture
+
+```mermaid
+graph TB
+ subgraph Frontend["Frontend Layer"]
+App["React/Next.js"]
+end
+
+    subgraph Backend["Backend Layer"]
+        tRPC["tRPC API"]
+        WorkspaceManager["Workspace Management Module"]
+    end
+
+    subgraph External["External Services"]
+        Weaviate["Weaviate<br/>(Vector DB)"]
+        Convex["Database / Convex"]
+    end
+
+    subgraph Workers["Isolated Workers"]
+        MicroVMs["MicroVM Based Workers<br/>(Horizontally Scalable)"]
+        WorkerOpenCode["OpenCode Instance<br/>(Plan & Run Implementation)"]
+    end
+
+    App --> tRPC
+    tRPC -->|API Calls| Convex
+    tRPC -->|Manages Workspaces| WorkspaceManager
+    WorkspaceManager -->|Creates/Manages| MicroVMs
+    MicroVMs -->|Uses| WorkerOpenCode
+    tRPC -.->|Vector Search| Weaviate
+
+    classDef frontend fill:#1a1a2e,stroke:#16213e,color:#eee
+    classDef api fill:#0f3460,stroke:#16213e,color:#eee
+    classDef backend fill:#0a2647,stroke:#16213e,color:#eee
+    classDef external fill:#144272,stroke:#16213e,color:#eee
+    classDef client fill:#2c2c54,stroke:#16213e,color:#eee
+    classDef static fill:#1a1a3e,stroke:#16213e,color:#eee
+    classDef workers fill:#2e0a47,stroke:#16213e,color:#eee
+
+    class Browser client
+    class App,Components,Styles frontend
+    class tRPC,Endpoints api
+    class Convex,Schema,ServerFns,WorkspaceManager backend
+    class Weaviate,OpenCode external
+    class Public static
+    class MicroVMs,WorkerOpenCode workers
+```
+
+---
+
 ## 🎯 Overview
 
 Tech MUC streamlines software development by:
