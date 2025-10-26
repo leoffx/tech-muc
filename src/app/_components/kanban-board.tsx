@@ -253,13 +253,13 @@ function TicketCardPreview({ ticket }: { ticket: KanbanTicket }) {
 function TicketCardContent({ ticket }: { ticket: KanbanTicket }) {
   return (
     <div className="space-y-2">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-foreground line-clamp-2 flex-1 text-sm font-medium">
-          {ticket.title}
-        </p>
+      <div className="flex flex-col items-start justify-between gap-2">
         {ticket.agentStatus && (
           <AgentStatusBadge status={ticket.agentStatus} size="sm" />
         )}
+        <p className="text-foreground line-clamp-2 flex-1 text-sm font-medium">
+          {ticket.title}
+        </p>
       </div>
       <p className="text-muted-foreground line-clamp-3 text-xs">
         {ticket.description}

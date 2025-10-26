@@ -305,6 +305,7 @@ export async function removeOpencodeArtifacts(workspacePath: string) {
 export async function subscribeToLogs(opencode: OpencodeClient) {
   const events = await opencode.event.subscribe();
   for await (const event of events.stream) {
+    console.log("Agent Event:", event.type);
     if (event.type === "message.part.updated") {
       const part = event.properties.part;
       if (part.type === "tool") {
