@@ -16,6 +16,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { type CSSProperties, useCallback, useMemo, useState } from "react";
 
 import { cn } from "~/lib/utils";
+import { AgentStatusBadge } from "./agent-status-badge";
 
 const STATUSES = ["todo", "planning", "in-progress", "done"] as const;
 
@@ -48,11 +49,19 @@ export const KANBAN_COLUMNS: Array<{
   },
 ];
 
+export type AgentStatus =
+  | "not-started"
+  | "in-progress"
+  | "completed"
+  | "failed"
+  | undefined;
+
 export type KanbanTicket = {
   _id: Id<"tickets">;
   title: string;
   description: string;
   status: TicketStatus;
+  agentStatus?: AgentStatus;
 };
 
 type KanbanBoardProps = {
@@ -243,11 +252,16 @@ function TicketCardPreview({ ticket }: { ticket: KanbanTicket }) {
 
 function TicketCardContent({ ticket }: { ticket: KanbanTicket }) {
   return (
-    <div>
-      <p className="text-foreground line-clamp-2 text-sm font-medium">
-        {ticket.title}
-      </p>
-      <p className="text-muted-foreground mt-2 line-clamp-3 text-xs">
+    <div className="space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-foreground line-clamp-2 flex-1 text-sm font-medium">
+          {ticket.title}
+        </p>
+        {ticket.agentStatus && (
+          <AgentStatusBadge status={ticket.agentStatus} size="sm" />
+        )}
+      </div>
+      <p className="text-muted-foreground line-clamp-3 text-xs">
         {ticket.description}
       </p>
     </div>

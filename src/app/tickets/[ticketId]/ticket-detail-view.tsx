@@ -21,6 +21,7 @@ import {
 } from "~/app/_components/ui/card";
 import { Skeleton } from "~/app/_components/ui/skeleton";
 import { api } from "~/trpc/react";
+import { AgentStatusBadge } from "~/app/_components/agent-status-badge";
 
 type TicketDetailViewProps = {
   ticketId: string;
@@ -118,11 +119,16 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
             <span className="text-muted-foreground mr-1 text-xs font-semibold tracking-wide uppercase">
               Status
             </span>
-            <span
-              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${STATUS_COLORS[status]}`}
-            >
-              {statusLabels[status]}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${STATUS_COLORS[status]}`}
+              >
+                {statusLabels[status]}
+              </span>
+              {ticket.agentStatus && (
+                <AgentStatusBadge status={ticket.agentStatus} size="md" />
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">

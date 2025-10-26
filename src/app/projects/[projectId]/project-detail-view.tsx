@@ -132,6 +132,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
       title: ticket.title,
       description: ticket.description,
       status: ticket.status,
+      agentStatus: ticket.agentStatus,
     }));
   }, [tickets]);
 
