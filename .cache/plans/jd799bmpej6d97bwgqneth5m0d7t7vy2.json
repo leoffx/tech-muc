@@ -1,0 +1,11 @@
+{
+  "ticketId": "jd799bmpej6d97bwgqneth5m0d7t7vy2",
+  "markdown": "Implementation Steps\n1. **Refresh Hero Messaging**\n   - Revise hero title and tagline to highlight rice, chicken, and broccoli nutrition themes.\n   - Ensure introductory copy mentions balanced meals featuring these staples for consistency with ticket goals.\n\n2. **Rewrite Feature Article Content**\n   - Rewrite article paragraphs to focus on nutritional benefits of rice, chicken, and broccoli combinations.\n  - Add specific meal-prep tips and health insights aligning with Nutri Blog tone and style.\n  - Keep blockquote supportive, referencing sustaining energy from balanced macronutrients in featured ingredients.\n\n3. **Update Latest Notes Metadata**\n   - Replace post titles with rice, chicken, broccoli focused topics that reinforce nutrition emphasis.\n   - Adjust excerpts to mention practical advice, meal ideas, and nutrient highlights for each ingredient.\n   - Verify dates remain in desired format or adjust if aligning with new editorial schedule.\n\n4. **Review Styling and Layout**\n   - Scan App.css for text-specific styling requiring tweaks for longer ingredient-focused excerpts.\n   - Confirm responsive layout still reads well with new copy length and vocabulary changes.\n\nFiles\n- Created: none\n- Modified: src/App.jsx (lines 4-67); src/App.css (line adjustments if typography requires)\n\nImpact Assessment\n- No breaking changes; content-only adjustments within existing components.\n- Backwards compatibility maintained; component structure and props remain unchanged.\n- Existing layout, styling, and build process continue to function as before.",
+  "sessionId": "ses_5df2591d6ffeqiU7S4gbCdpbNF",
+  "generatedAt": "2025-10-26T14:10:02.640Z",
+  "workspace": {
+    "workspacePath": "/var/folders/9y/p6w76jd93kvby4d3r6tym5xr0000gn/T/tech-muc-agent/jd799bmpej6d97bwgqneth5m0d7t7vy2",
+    "repoUrl": "git@github.com:dalbar/nutri-static.git",
+    "branch": null
+  }
+}
