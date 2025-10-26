@@ -228,6 +228,11 @@ export const planRouter = createTRPCRouter({
         });
       }
 
+      await convex.mutation(api.tickets.updateAgentStatus, {
+        ticketId,
+        agentStatus: "implementing",
+      });
+
       const workspace = await ensureTicketWorkspace({
         ticketId: input.ticketId,
         repoUrl,
@@ -252,12 +257,6 @@ export const planRouter = createTRPCRouter({
         workspace.workspacePath,
       );
       try {
-        // Set agent status to in-progress when starting implementation
-        await convex.mutation(api.tickets.updateAgentStatus, {
-          ticketId,
-          agentStatus: "implementing",
-        });
-
         const implementation = await spawnImplementationClient({
           ticketId: input.ticketId,
           repoUrl: workspace.repoUrl,
