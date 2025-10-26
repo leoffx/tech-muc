@@ -88,8 +88,12 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
         </span>
       </div>
 
-      <Button onClick={() => createPlan.mutate({ ticketId })}> Regenerate Plan</Button>
-      <Button onClick={() => createImplementation.mutate({ ticketId })}> Regenerate Implementation</Button>
+      <Button onClick={() => createPlan.mutate({ ticketId })}>
+        Regenerate Plan
+      </Button>
+      <Button onClick={() => createImplementation.mutate({ ticketId })}>
+        Regenerate Implementation
+      </Button>
       <Card>
         <CardHeader>
           <CardTitle className="text-foreground text-3xl font-semibold">
@@ -97,9 +101,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
           </CardTitle>
           <CardDescription className="flex flex-wrap items-center gap-2 text-sm">
             <span>Project:</span>
-            {project === undefined ? (
-              <Skeleton className="h-4 w-40" />
-            ) : project ? (
+            {project ? (
               <Link
                 href={projectHref}
                 className="text-foreground font-medium underline underline-offset-4"

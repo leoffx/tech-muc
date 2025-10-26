@@ -78,6 +78,12 @@ export const planRouter = createTRPCRouter({
 
       const opencodeInstance = await createWorkspaceOpencodeInstance(workspace.workspacePath);
       try {
+        // Set agent status to in-progress when starting
+        await convex.mutation(api.tickets.updateAgentStatus, {
+          ticketId,
+          agentStatus: "in-progress",
+        });
+
         const planResult = await spawnPlanClient({
           ticketId: input.ticketId,
           repoUrl: workspace.repoUrl,
@@ -102,6 +108,12 @@ export const planRouter = createTRPCRouter({
           plan: planResult.markdown,
         });
 
+        // Set agent status to completed after successful plan generation
+        await convex.mutation(api.tickets.updateAgentStatus, {
+          ticketId,
+          agentStatus: "completed",
+        });
+
         return {
           plan: {
             ticketId: input.ticketId,
@@ -111,6 +123,18 @@ export const planRouter = createTRPCRouter({
           },
           workspace,
         };
+      } catch (error) {
+        // Set agent status to failed on error
+        await convex.mutation(api.tickets.updateAgentStatus, {
+          ticketId,
+          agentStatus: "failed",
+        }).catch((updateError) => {
+          console.warn("[PlanRouter] Failed to update agent status to failed", {
+            ticketId: input.ticketId,
+            error: updateError instanceof Error ? updateError.message : String(updateError),
+          });
+        });
+        throw error;
       } finally {
         opencodeInstance.close();
         await removeOpencodeArtifacts(workspace.workspacePath).catch((error) => {
@@ -191,6 +215,12 @@ export const planRouter = createTRPCRouter({
 
       const opencodeInstance = await createWorkspaceOpencodeInstance(workspace.workspacePath);
       try {
+        // Set agent status to in-progress when starting implementation
+        await convex.mutation(api.tickets.updateAgentStatus, {
+          ticketId,
+          agentStatus: "in-progress",
+        });
+
         const implementation = await spawnImplementationClient({
           ticketId: input.ticketId,
           repoUrl: workspace.repoUrl,
@@ -236,6 +266,20 @@ export const planRouter = createTRPCRouter({
 
         const refreshedWorkspace = await getTicketWorkspace(input.ticketId);
 
+        // Update pullRequestUrl if a PR was created/retrieved
+        if (finalization.pullRequest?.url) {
+          await convex.mutation(api.tickets.updatePullRequestUrl, {
+            ticketId,
+            pullRequestUrl: finalization.pullRequest.url,
+          });
+        }
+
+        // Set agent status to completed after successful implementation
+        await convex.mutation(api.tickets.updateAgentStatus, {
+          ticketId,
+          agentStatus: "completed",
+        });
+
         return {
           ticketId: input.ticketId,
           branch: branchName,
@@ -250,6 +294,18 @@ export const planRouter = createTRPCRouter({
           commit: finalization.commit,
           pullRequest: finalization.pullRequest,
         };
+      } catch (error) {
+        // Set agent status to failed on error
+        await convex.mutation(api.tickets.updateAgentStatus, {
+          ticketId,
+          agentStatus: "failed",
+        }).catch((updateError) => {
+          console.warn("[PlanRouter] Failed to update agent status to failed", {
+            ticketId: input.ticketId,
+            error: updateError instanceof Error ? updateError.message : String(updateError),
+          });
+        });
+        throw error;
       } finally {
         opencodeInstance.close();
         await removeOpencodeArtifacts(workspace.workspacePath).catch((error) => {

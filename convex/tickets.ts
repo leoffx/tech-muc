@@ -73,3 +73,30 @@ export const savePlan = mutation({
     });
   },
 });
+
+const agentStatusEnum = v.union(
+  v.literal("not-started"),
+  v.literal("in-progress"),
+  v.literal("completed"),
+  v.literal("failed"),
+);
+
+export const updateAgentStatus = mutation({
+  args: {
+    ticketId: v.id("tickets"),
+    agentStatus: agentStatusEnum,
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.ticketId, { agentStatus: args.agentStatus });
+  },
+});
+
+export const updatePullRequestUrl = mutation({
+  args: {
+    ticketId: v.id("tickets"),
+    pullRequestUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.ticketId, { pullRequestUrl: args.pullRequestUrl });
+  },
+});
