@@ -239,6 +239,24 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
               <p className="text-muted-foreground text-sm">Unknown author</p>
             )}
           </div>
+
+          {ticket.pullRequestUrl && (
+            <div className="space-y-2">
+              <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                Pull Request
+              </span>
+              <div>
+                <a
+                  href={ticket.pullRequestUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 text-sm hover:underline underline-offset-4"
+                >
+                  {ticket.pullRequestUrl}
+                </a>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
