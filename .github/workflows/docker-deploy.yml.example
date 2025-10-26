@@ -1,0 +1,111 @@
+# CI/CD Example - GitHub Actions
+
+# This workflow demonstrates secure Docker image building and deployment
+# Secrets are managed through GitHub Secrets and never exposed in the image
+
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Deploy to production
+        env:
+          # Secrets are retrieved from GitHub Secrets at runtime
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CONVEX_URL: ${{ secrets.CONVEX_URL }}
+          OPENCODE_MODEL: ${{ secrets.OPENCODE_MODEL }}
+          OPENCODE_ENDPOINT: ${{ secrets.OPENCODE_ENDPOINT }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          # Example: Deploy to your infrastructure
+          # The secrets are passed as environment variables, NOT in the image
+          
+          # Option 1: Update AWS ECS task definition with new image
+          # aws ecs update-service --cluster prod --service tech-muc --force-new-deployment
+          
+          # Option 2: Deploy to Kubernetes with kubectl
+          # kubectl set image deployment/tech-muc tech-muc=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          
+          # Option 3: Deploy to Cloud Run
+          # gcloud run deploy tech-muc \
+          #   --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }} \
+          #   --set-env-vars OPENAI_API_KEY=$OPENAI_API_KEY,CONVEX_URL=$CONVEX_URL
+          
+          echo "Deploy with your platform's CLI, passing secrets as env vars"
+
+# Required GitHub Secrets to configure:
+# - OPENAI_API_KEY
+# - CONVEX_URL
+# - OPENCODE_MODEL (optional)
+# - OPENCODE_ENDPOINT (optional)
+# - GH_TOKEN (optional)
+# 
+# Plus any deployment-specific secrets (AWS credentials, GCP service account, etc.)

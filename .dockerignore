@@ -1,0 +1,68 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+# package-lock.json is REQUIRED for npm ci in Docker
+yarn.lock
+pnpm-lock.yaml
+
+# Legacy/Old code
+old_backend
+
+# Build output
+.next
+out
+dist
+build
+
+# Testing
+coverage
+.nyc_output
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+README.md
+docs/
+*.md
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+.circleci
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Misc
+.eslintcache
+.prettier*
+.editorconfig
+
+# Old backend (if not needed)
+old_backend/
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
