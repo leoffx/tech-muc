@@ -147,11 +147,20 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
         </span>
       </div>
 
-     <Card>
+      <Card>
         <CardHeader>
-          <CardTitle className="text-foreground text-3xl font-semibold">
-            {ticket.title}
-          </CardTitle>
+          <div className="flex justify-between">
+            <CardTitle className="text-foreground text-3xl font-semibold">
+              {ticket.title}
+            </CardTitle>
+            {ticket.agentStatus && (
+              <AgentStatusBadge
+                status={ticket.agentStatus}
+                size="md"
+                className="w-fit"
+              />
+            )}
+          </div>
           <CardDescription className="flex flex-wrap items-center gap-2 text-sm">
             <span>Project:</span>
             {project ? (
@@ -177,9 +186,6 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
               >
                 {statusLabels[status]}
               </span>
-              {ticket.agentStatus && (
-                <AgentStatusBadge status={ticket.agentStatus} size="md" />
-              )}
             </div>
           </div>
 
@@ -250,7 +256,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
                   href={ticket.pullRequestUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 dark:text-blue-400 text-sm hover:underline underline-offset-4"
+                  className="text-sm text-blue-600 underline-offset-4 hover:underline dark:text-blue-400"
                 >
                   {ticket.pullRequestUrl}
                 </a>
