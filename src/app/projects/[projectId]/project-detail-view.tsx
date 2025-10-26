@@ -141,14 +141,23 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   };
 
   const kanbanTickets: KanbanTicket[] = useMemo(() => {
-    return (tickets ?? []).map((ticket) => ({
-      _id: ticket._id,
-      title: ticket.title,
-      description: ticket.description,
-      status: ticket.status,
-      agentStatus: ticket.agentStatus,
-    }));
-  }, [tickets]);
+    return (tickets ?? []).map((ticket) => {
+      const author = authors?.find((a) => a._id === ticket.author);
+      return {
+        _id: ticket._id,
+        title: ticket.title,
+        description: ticket.description,
+        status: ticket.status,
+        agentStatus: ticket.agentStatus,
+        author: author
+          ? {
+              name: author.name,
+              imageUrl: author.imageUrl,
+            }
+          : undefined,
+      };
+    });
+  }, [tickets, authors]);
 
   const hasAuthors = (authors?.length ?? 0) > 0;
   const isLoading =

@@ -62,6 +62,10 @@ export type KanbanTicket = {
   description: string;
   status: TicketStatus;
   agentStatus?: AgentStatus;
+  author?: {
+    name: string;
+    imageUrl: string;
+  };
 };
 
 type KanbanBoardProps = {
@@ -228,7 +232,7 @@ function DraggableTicketCard({ ticket, onClick }: TicketCardProps) {
       className={cn(
         "border-border bg-card focus:ring-ring rounded-lg border p-3 text-left shadow-sm transition focus:ring-2 focus:outline-none",
         isDragging
-          ? "cursor-grab opacity-70 ring-0"
+          ? "cursor-grab opacity-0"
           : "hover:border-primary cursor-pointer",
       )}
       onClick={() => {
@@ -254,9 +258,18 @@ function TicketCardContent({ ticket }: { ticket: KanbanTicket }) {
   return (
     <div className="space-y-2">
       <div className="flex flex-col items-start justify-between gap-2">
-        {ticket.agentStatus && (
-          <AgentStatusBadge status={ticket.agentStatus} size="sm" />
-        )}
+        <div className="flex w-full justify-between">
+          {ticket.agentStatus && (
+            <AgentStatusBadge status={ticket.agentStatus} size="sm" />
+          )}
+          {ticket.author && (
+            <img
+              src={ticket.author.imageUrl}
+              alt={ticket.author.name}
+              className="h-5 w-5 rounded-full object-cover"
+            />
+          )}
+        </div>
         <p className="text-foreground line-clamp-2 flex-1 text-sm font-medium">
           {ticket.title}
         </p>
