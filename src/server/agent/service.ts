@@ -185,6 +185,12 @@ export async function spawnPlanClient(
     opencode: options.opencode,
   });
 
+  console.log("[Plan] Sending prompt to session", {
+    sessionId: client.sessionId,
+    systemPromptLength: prompt.system.length,
+    userPromptLength: prompt.user.length,
+  });
+
   const response = await options.opencode.session.prompt({
     path: {
       id: client.sessionId,
@@ -204,10 +210,21 @@ export async function spawnPlanClient(
     throwOnError: true,
   });
 
+  console.log("[Plan] Received response from session", {
+    sessionId: client.sessionId,
+    hasData: !!response.data,
+    hasError: "error" in response && !!response.error,
+  });
+
   const markdown = extractTextFromPromptResponse(
     response,
     "Plan generation did not return any content",
   );
+
+  console.log("[Plan] Successfully extracted plan", {
+    sessionId: client.sessionId,
+    planLength: markdown.length,
+  });
 
   return {
     client,
@@ -271,22 +288,67 @@ function extractTextFromPromptResponse(
   response: { data?: unknown; error?: unknown },
   errorMessage: string,
 ) {
+  // Check for error first
+  if (response.error) {
+    const maybeError = response.error;
+    throw maybeError instanceof Error ? maybeError : new Error(errorMessage);
+  }
+
   const data = response.data;
   if (!data || typeof data !== "object" || !("parts" in data)) {
-    const maybeError = "error" in response ? response.error : undefined;
-    throw maybeError instanceof Error ? maybeError : new Error(errorMessage);
+    console.warn("[extractTextFromPromptResponse] Invalid response structure", {
+      hasData: !!data,
+      dataType: typeof data,
+      hasParts: data && typeof data === "object" && "parts" in data,
+      response: JSON.stringify(response, null, 2),
+    });
+    throw new Error(errorMessage);
+  }
+
+  // Check for error in the info object
+  const info = (data as { info?: unknown }).info;
+  if (info && typeof info === "object" && "error" in info) {
+    const errorInfo = (info as { error?: { name?: string; data?: { message?: string } } }).error;
+    if (errorInfo) {
+      const errorMsg = errorInfo.data?.message ?? errorInfo.name ?? "Unknown error";
+      console.error("[extractTextFromPromptResponse] API Error in response", {
+        error: errorInfo,
+      });
+      throw new Error(`API Error: ${errorMsg}`);
+    }
   }
 
   const potentialParts = (data as { parts?: unknown }).parts;
   const parts: unknown[] = Array.isArray(potentialParts) ? potentialParts : [];
-  const text = parts
-    .filter(isTextPart)
+  
+  if (parts.length === 0) {
+    console.warn("[extractTextFromPromptResponse] No parts in response", {
+      response: JSON.stringify(response, null, 2),
+    });
+    throw new Error(`${errorMessage} (response contained no parts)`);
+  }
+
+  const textParts = parts.filter(isTextPart);
+  
+  if (textParts.length === 0) {
+    console.warn("[extractTextFromPromptResponse] No text parts found", {
+      totalParts: parts.length,
+      partTypes: parts.map((p) => (p && typeof p === "object" && "type" in p ? (p as { type: unknown }).type : "unknown")),
+      response: JSON.stringify(response, null, 2),
+    });
+    throw new Error(`${errorMessage} (response contained no text parts)`);
+  }
+
+  const text = textParts
     .map((part) => part.text.trim())
     .filter((segment) => segment.length > 0)
     .join("\n\n");
 
   if (!text) {
-    throw new Error(errorMessage);
+    console.warn("[extractTextFromPromptResponse] All text parts were empty", {
+      textPartsCount: textParts.length,
+    });
+    throw new Error(`${errorMessage} (all text parts were empty)`);
   }
 
   return text;
@@ -316,7 +378,7 @@ export async function removeOpencodeArtifacts(workspacePath: string) {
 
 export async function subscribeToLogs(
   opencode: OpencodeClient,
-  sessionId?: string,
+  _sessionId?: string,
 ) {
   const events = await opencode.event.subscribe();
   for await (const event of events.stream) {

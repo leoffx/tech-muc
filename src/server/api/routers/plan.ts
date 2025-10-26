@@ -96,6 +96,11 @@ export const planRouter = createTRPCRouter({
         workspaceBranch: workspace.branch ?? null,
       });
 
+      console.info("[PlanRouter] Generating plan for ticket", {
+        ticketId: input.ticketId,
+        userPrompt: userPrompt
+      });
+
       const opencodeInstance = await createWorkspaceOpencodeInstance(
         workspace.workspacePath,
       );

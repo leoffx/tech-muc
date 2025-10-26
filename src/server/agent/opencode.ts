@@ -105,15 +105,24 @@ export async function createWorkspaceOpencodeInstance(
 }
 
 async function authenticate(client: OpencodeClient) {
+  const apiKey = env.OPENAI_API_KEY;
+  
+  // Log API key for debugging (redacted)
+  const redactedKey = apiKey 
+    ? `${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)}`
+    : '(not set)';
+  
   await client.auth.set({
-    path: { id: DEFAULT_PROVIDER_ID },
+    path: { id: "openapi" },
     body: {
       type: "api",
-      key: env.OPENAI_API_KEY,
+      key: apiKey,
     },
     throwOnError: true,
     responseStyle: "fields",
   });
+  
+  console.log("[OpenCode] Authentication successful");
 }
 
 async function determineLocalPort() {
