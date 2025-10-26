@@ -1,0 +1,19 @@
+# INTENTIONALLY VULNERABLE CODE - FOR SECURITY SCANNER TESTING ONLY
+# This Dockerfile contains security vulnerabilities for testing Aikido scanner
+
+# VULNERABLE: Running as root
+FROM ubuntu:20.04
+
+# VULNERABLE: Hardcoded secrets
+ENV DB_PASSWORD="MySecretP@ssw0rd123"
+ENV API_KEY="sk-proj-1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijklmnopqr"
+
+# VULNERABLE: Secrets in ARG (visible in history)
+ARG AWS_SECRET_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+
+# VULNERABLE: Using latest tag (unpredictable)
+RUN apt-get update && apt-get install -y curl
+
+# VULNERABLE: No USER directive (runs as root)
+COPY app.js /app/
+CMD ["node", "/app/app.js"]
