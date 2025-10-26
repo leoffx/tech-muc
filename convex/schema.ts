@@ -15,6 +15,16 @@ export default defineSchema({
     author: v.id("authors"),
     conversation: v.optional(v.object({})),
     plan: v.optional(v.string()),
+    agentStatus: v.optional(
+      v.union(
+        v.literal("not-started"),
+        v.literal("in-progress"),
+        v.literal("completed"),
+        v.literal("failed"),
+      ),
+    ),
+    previewUrl: v.optional(v.string()),
+    pullRequestUrl: v.optional(v.string()),
   }).index("by_projectId", ["projectId"]),
   authors: defineTable({
     name: v.string(),
