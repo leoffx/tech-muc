@@ -57,6 +57,8 @@ end
 
 ## 😈 Vulnerability Report
 
+79 critical + 109 high + 15 medium + 9 low = 212 vulnerabilities!
+
 <img src="aikido/vulns.png">
 
 ---
