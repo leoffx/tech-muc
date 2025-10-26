@@ -20,7 +20,12 @@ import {
 import { createWorkspaceOpencodeInstance } from "~/server/agent/opencode";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { findSimilarTasks, storeTask } from "~/server/weaviate/service";
-import { getCachedPlan, setCachedPlan } from "~/server/agent/plan-cache";
+import {
+  getCachedPlan,
+  setCachedPlan,
+  getCachedImplementation,
+  setCachedImplementation,
+} from "~/server/agent/plan-cache";
 
 function loadPlanPrompt() {
   return readFileSync(
@@ -303,6 +308,97 @@ export const planRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       const convex = createConvexClient();
       const ticketId = toTicketId(input.ticketId);
+
+      // Check if we have a cached implementation for this ticket
+      const cachedImpl = getCachedImplementation(input.ticketId);
+      if (cachedImpl) {
+        console.info("[PlanRouter] Serving cached implementation for ticket", {
+          ticketId: input.ticketId,
+        });
+
+        await convex
+          .mutation(api.tickets.updateAgentStatus, {
+            ticketId,
+            agentStatus: "implementing",
+          })
+          .catch((error) => {
+            console.error(
+              "[PlanRouter] Failed to update ticket status from cache",
+              {
+                ticketId: input.ticketId,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            );
+          });
+
+        // Schedule DB updates after 10 seconds
+        setTimeout(() => {
+          convex
+            .mutation(api.tickets.updateAgentStatus, {
+              ticketId,
+              agentStatus: "completed",
+            })
+            .catch((error) => {
+              console.error(
+                "[PlanRouter] Failed to update agent status from cache",
+                {
+                  ticketId: input.ticketId,
+                  error: error instanceof Error ? error.message : String(error),
+                },
+              );
+            });
+
+          if (cachedImpl.preview?.latestUrl) {
+            convex
+              .mutation(api.tickets.updatePreviewUrl, {
+                ticketId,
+                previewUrl: cachedImpl.preview.latestUrl,
+              })
+              .catch((error) => {
+                console.error(
+                  "[PlanRouter] Failed to update preview URL from cache",
+                  {
+                    ticketId: input.ticketId,
+                    error:
+                      error instanceof Error ? error.message : String(error),
+                  },
+                );
+              });
+          }
+
+          if (cachedImpl.pullRequest?.url) {
+            convex
+              .mutation(api.tickets.updatePullRequestUrl, {
+                ticketId,
+                pullRequestUrl: cachedImpl.pullRequest.url,
+              })
+              .catch((error) => {
+                console.error(
+                  "[PlanRouter] Failed to update pull request URL from cache",
+                  {
+                    ticketId: input.ticketId,
+                    error:
+                      error instanceof Error ? error.message : String(error),
+                  },
+                );
+              });
+          }
+        }, 10000);
+
+        return {
+          ticketId: input.ticketId,
+          branch: cachedImpl.branch,
+          plan: cachedImpl.plan,
+          sessionId: cachedImpl.sessionId,
+          workspace: cachedImpl.workspace,
+          acknowledgement: cachedImpl.acknowledgement,
+          changes: cachedImpl.changes,
+          commit: cachedImpl.commit,
+          pullRequest: cachedImpl.pullRequest,
+          preview: cachedImpl.preview,
+        };
+      }
+
       const ticket = await convex.query(api.tickets.get, {
         ticketId,
       });

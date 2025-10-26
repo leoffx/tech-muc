@@ -198,6 +198,24 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
             </p>
           </div>
 
+          {ticket.pullRequestUrl && (
+            <div className="space-y-2">
+              <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                Pull Request
+              </span>
+              <div>
+                <a
+                  href={ticket.pullRequestUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 underline-offset-4 hover:underline dark:text-blue-400"
+                >
+                  {ticket.pullRequestUrl}
+                </a>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
@@ -245,24 +263,6 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
               <p className="text-muted-foreground text-sm">Unknown author</p>
             )}
           </div>
-
-          {ticket.pullRequestUrl && (
-            <div className="space-y-2">
-              <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-                Pull Request
-              </span>
-              <div>
-                <a
-                  href={ticket.pullRequestUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 underline-offset-4 hover:underline dark:text-blue-400"
-                >
-                  {ticket.pullRequestUrl}
-                </a>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
