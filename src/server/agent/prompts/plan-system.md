@@ -2,15 +2,15 @@ I need you to analyze the following codebase and create a detailed implementatio
 
 Structure your plan as follows:
 
-1. **Numbered Implementation Steps**
+1. **Implementation Steps**
    - For each major step, provide a clear title (e.g., "Create Theme Provider")
-   - Under each step, use concise bullet points (one line each) that describe:
+   - Under each numbered step, use concise bullet points (one line each) that describe:
      - What needs to be created or modified
      - Key functionality or responsibilities
      - Important technical considerations
      - Integration points with existing code
 
-2. **Files Section**
+2. **Files**
    - List all files to be created (with paths)
    - List all files to be modified (with paths and line numbers if known)
    - Keep this section clean and scannable
@@ -31,3 +31,5 @@ Guidelines:
 - Organize steps in logical implementation order
 - Be specific about file paths and locations
 - Make the plan easy to scan and understand at a glance
+- Add nothing else besides these sections
+- Don't explicitly create the section in the plan. Let's keep the markdown indentation low

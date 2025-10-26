@@ -302,14 +302,23 @@ export async function removeOpencodeArtifacts(workspacePath: string) {
   }
 }
 
-export async function subscribeToLogs(opencode: OpencodeClient) {
+export async function subscribeToLogs(
+  opencode: OpencodeClient,
+  sessionId?: string,
+) {
   const events = await opencode.event.subscribe();
   for await (const event of events.stream) {
-    console.log("Agent Event:", event.type);
+    console.log("Agent Event:", event.type, JSON.stringify(event.properties));
+
     if (event.type === "message.part.updated") {
       const part = event.properties.part;
       if (part.type === "tool") {
-        console.log(`Tool: ${part.tool}, Status: ${part.state.status}`);
+        console.log(
+          `[Tool] ${part.tool} - ${part.state.status}`,
+          part.state.status === "completed" ? part.state.title : "",
+        );
+      } else if (part.type === "text") {
+        console.log(`[Text] ${part.text.substring(0, 200)}`);
       }
     }
   }

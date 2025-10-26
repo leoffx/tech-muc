@@ -7,7 +7,14 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 
 import { api } from "../../convex/_generated/api";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./_components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./_components/ui/card";
 import { Button } from "./_components/ui/button";
 import { Input } from "./_components/ui/input";
 import { Label } from "./_components/ui/label";
@@ -31,7 +38,9 @@ export default function Home() {
     const trimmedUrl = githubRepoUrl.trim();
 
     if (!trimmedTitle || !trimmedUrl) {
-      setError("Please provide both a project title and a GitHub repository URL.");
+      setError(
+        "Please provide both a project title and a GitHub repository URL.",
+      );
       return;
     }
 
@@ -61,15 +70,21 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-6 py-12">
-      <section className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <section className="border-border flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-foreground">Tech MUC Projects</h1>
-          <p className="max-w-2xl text-muted-foreground">
-            Browse community-built projects and jump straight into their GitHub repositories. Ready to share?
-            Publish yours and inspire the next contributor.
+          <h1 className="text-foreground text-4xl font-bold">
+            Tech MUC Projects
+          </h1>
+          <p className="text-muted-foreground max-w-2xl">
+            Browse community-built projects and jump straight into their GitHub
+            repositories. Ready to share? Publish yours and inspire the next
+            contributor.
           </p>
         </div>
-        <Button className="w-full sm:w-auto" onClick={() => setIsModalOpen(true)}>
+        <Button
+          className="w-full sm:w-auto"
+          onClick={() => setIsModalOpen(true)}
+        >
           Create a project
         </Button>
       </section>
@@ -80,7 +95,10 @@ export default function Home() {
         ) : hasProjects ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((project) => (
-              <Card key={project._id} className="flex h-full flex-col justify-between transition hover:shadow-md">
+              <Card
+                key={project._id}
+                className="flex h-full flex-col justify-between transition hover:shadow-md"
+              >
                 <CardHeader className="space-y-2">
                   <CardTitle>{project.title}</CardTitle>
                   <CardDescription className="truncate">
@@ -88,7 +106,7 @@ export default function Home() {
                       href={project.githubRepoUrl}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className="font-medium text-foreground underline hover:text-primary"
+                      className="text-foreground hover:text-primary font-medium underline"
                     >
                       {project.githubRepoUrl}
                     </a>
@@ -97,7 +115,7 @@ export default function Home() {
                 <CardFooter>
                   <Link
                     href={`/projects/${project._id}`}
-                    className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex w-full items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition"
                   >
                     Open kanban
                   </Link>
@@ -114,7 +132,9 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => setIsModalOpen(true)}>Create a project</Button>
+              <Button onClick={() => setIsModalOpen(true)}>
+                Create a project
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -142,7 +162,7 @@ export default function Home() {
             <Label htmlFor="github-url">GitHub repository URL</Label>
             <Input
               id="github-url"
-              type="url"
+              type="text"
               value={githubRepoUrl}
               onChange={(event) => setGithubRepoUrl(event.target.value)}
               placeholder="https://github.com/tech-muc/website"
@@ -155,7 +175,7 @@ export default function Home() {
               type="button"
               onClick={() => setIsModalOpen(false)}
               disabled={isSubmitting}
-              className="bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground bg-transparent"
             >
               Cancel
             </Button>

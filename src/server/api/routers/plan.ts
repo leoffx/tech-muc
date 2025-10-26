@@ -401,11 +401,6 @@ function buildPlanPrompt(input: {
   workspaceRepoUrl: string;
   workspaceBranch: string | null;
 }) {
-  const acceptanceCriteria = formatAcceptanceCriteria(input.ticket);
-  const userStories =
-    extractUserStoriesFromDescription(input.ticket.description) ??
-    '- Derive user stories from the context so each follows "As a ..., I want ..., so that ...".';
-
   const contextLines = [
     `Ticket ID: ${input.ticket._id}`,
     `Title: ${input.ticket.title}`,
@@ -422,68 +417,7 @@ function buildPlanPrompt(input: {
     "### Ticket Description",
     indentBlock(input.ticket.description ?? "No description provided."),
     "",
-    "## Acceptance Criteria",
-    acceptanceCriteria,
-    "",
-    "## User Stories",
-    userStories,
   ].join("\n");
-}
-
-function formatAcceptanceCriteria(ticket: Doc<"tickets">) {
-  const lines = ticket.description
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-
-  const sectionStart = lines.findIndex((line) =>
-    /^acceptance criteria:?$/i.test(line),
-  );
-
-  let candidateLines: string[] = [];
-  if (sectionStart !== -1) {
-    for (let i = sectionStart + 1; i < lines.length; i += 1) {
-      const current = lines[i];
-      if (!current) {
-        continue;
-      }
-      if (/^[A-Z][A-Za-z0-9\s]+:/.test(current)) {
-        break;
-      }
-      candidateLines.push(current);
-    }
-  } else {
-    candidateLines = lines.filter((line) => /^[-*•]/.test(line));
-  }
-
-  if (candidateLines.length === 0) {
-    return "- Derive acceptance criteria from the ticket description and any linked discussion.";
-  }
-
-  return candidateLines
-    .map((line) => {
-      if (/^[-*•]\s*/.test(line)) {
-        const normalized = line.replace(/^[-*•]\s*/, "").trim();
-        return `- ${normalized}`;
-      }
-      return `- ${line}`;
-    })
-    .join("\n");
-}
-
-function extractUserStoriesFromDescription(description: string) {
-  const lines = description
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-
-  const storyLines = lines.filter((line) => /^as\s+(a|an|the)\b/i.test(line));
-
-  if (storyLines.length === 0) {
-    return null;
-  }
-
-  return storyLines.map((line) => `- ${line}`).join("\n");
 }
 
 function indentBlock(text: string) {

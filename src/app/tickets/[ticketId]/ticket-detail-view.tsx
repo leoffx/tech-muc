@@ -1,9 +1,10 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
 
 import { api as convexApi } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -56,6 +57,45 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   const createPlan = api.plan.create.useMutation();
   const createImplementation = api.plan.implement.useMutation();
 
+  // Resizable panel state
+  const [leftWidth, setLeftWidth] = useState(50); // percentage
+  const [isResizing, setIsResizing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // useEffect(() => {
+  //   const handleMouseMove = (e: MouseEvent) => {
+  //     if (!isResizing || !containerRef.current) return;
+
+  //     const container = containerRef.current;
+  //     const containerRect = container.getBoundingClientRect();
+  //     const newWidth =
+  //       ((e.clientX - containerRect.left) / containerRect.width) * 100;
+
+  //     // Constrain between 20% and 80%
+  //     const constrainedWidth = Math.min(Math.max(newWidth, 20), 80);
+  //     setLeftWidth(constrainedWidth);
+  //   };
+
+  //   const handleMouseUp = () => {
+  //     setIsResizing(false);
+  //   };
+
+  //   if (isResizing) {
+  //     document.addEventListener("mousemove", handleMouseMove);
+  //     document.addEventListener("mouseup", handleMouseUp);
+  //     // Prevent text selection while dragging
+  //     document.body.style.userSelect = "none";
+  //     document.body.style.cursor = "col-resize";
+  //   }
+
+  //   return () => {
+  //     document.removeEventListener("mousemove", handleMouseMove);
+  //     document.removeEventListener("mouseup", handleMouseUp);
+  //     document.body.style.userSelect = "";
+  //     document.body.style.cursor = "";
+  //   };
+  // }, [isResizing]);
+
   if (ticket === undefined) {
     return <TicketDetailSkeleton />;
   }
@@ -81,7 +121,9 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   const hasPreview = Boolean(ticket.previewUrl);
 
   const ticketContent = (
-    <div className={`flex flex-col gap-6 ${hasPreview ? "px-6 py-10" : "mx-auto max-w-3xl px-6 py-10"}`}>
+    <div
+      className={`flex flex-col gap-6 ${hasPreview ? "px-6 py-10" : "mx-auto max-w-3xl px-6 py-10"}`}
+    >
       <div className="flex items-center gap-2">
         <Button
           onClick={() => router.push(projectHref)}
@@ -96,9 +138,6 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
         </span>
       </div>
 
-      <Button onClick={() => createPlan.mutate({ ticketId })}>
-        Regenerate Plan
-      </Button>
       <Button onClick={() => createImplementation.mutate({ ticketId })}>
         Regenerate Implementation
       </Button>
@@ -148,14 +187,27 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
           </div>
 
           <div className="space-y-2">
-            <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-              Plan
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                Plan
+              </span>
+            </div>
             {ticket.plan ? (
-              <MarkdownContent
-                content={ticket.plan}
-                className="border-border bg-muted/50 rounded-md border p-4"
-              />
+              <div className="relative">
+                <Button
+                  onClick={() => createPlan.mutate({ ticketId })}
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-2 right-2 h-7 w-7 p-0"
+                  aria-label="Regenerate plan"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </Button>
+                <MarkdownContent
+                  content={ticket.plan}
+                  className="border-border bg-muted/50 rounded-md border p-4"
+                />
+              </div>
             ) : (
               <p className="text-muted-foreground text-sm">No plan yet.</p>
             )}
@@ -180,9 +232,9 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
 
   if (hasPreview) {
     return (
-      <div className="flex h-screen w-full">
+      <div ref={containerRef} className="flex h-screen w-full">
         {/* Preview iframe on the left */}
-        <div className="w-1/2 border-r">
+        <div className="border-r" style={{ width: `${leftWidth}%` }}>
           <iframe
             src={ticket.previewUrl}
             className="h-full w-full"
@@ -190,8 +242,20 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
           />
         </div>
 
+        {/* Resizable divider */}
+        <div
+          className="bg-border hover:bg-primary/50 w-1 cursor-col-resize transition-colors"
+          onMouseDown={() => setIsResizing(true)}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize panels"
+        />
+
         {/* Ticket details on the right */}
-        <div className="w-1/2 overflow-y-auto">
+        <div
+          className="overflow-y-auto"
+          style={{ width: `${100 - leftWidth}%` }}
+        >
           {ticketContent}
         </div>
       </div>
