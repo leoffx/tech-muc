@@ -61,40 +61,49 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   const [leftWidth, setLeftWidth] = useState(50); // percentage
   const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // useEffect(() => {
-  //   const handleMouseMove = (e: MouseEvent) => {
-  //     if (!isResizing || !containerRef.current) return;
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing || !containerRef.current) return;
 
-  //     const container = containerRef.current;
-  //     const containerRect = container.getBoundingClientRect();
-  //     const newWidth =
-  //       ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      const container = containerRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const newWidth =
+        ((e.clientX - containerRect.left) / containerRect.width) * 100;
 
-  //     // Constrain between 20% and 80%
-  //     const constrainedWidth = Math.min(Math.max(newWidth, 20), 80);
-  //     setLeftWidth(constrainedWidth);
-  //   };
+      // Constrain between 20% and 80%
+      const constrainedWidth = Math.min(Math.max(newWidth, 20), 80);
+      setLeftWidth(constrainedWidth);
+    };
 
-  //   const handleMouseUp = () => {
-  //     setIsResizing(false);
-  //   };
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
 
-  //   if (isResizing) {
-  //     document.addEventListener("mousemove", handleMouseMove);
-  //     document.addEventListener("mouseup", handleMouseUp);
-  //     // Prevent text selection while dragging
-  //     document.body.style.userSelect = "none";
-  //     document.body.style.cursor = "col-resize";
-  //   }
+    if (isResizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      // Prevent text selection while dragging
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "col-resize";
+      // Disable pointer events on iframe to prevent it from capturing mouse events
+      if (iframeRef.current) {
+        iframeRef.current.style.pointerEvents = "none";
+      }
+    }
 
-  //   return () => {
-  //     document.removeEventListener("mousemove", handleMouseMove);
-  //     document.removeEventListener("mouseup", handleMouseUp);
-  //     document.body.style.userSelect = "";
-  //     document.body.style.cursor = "";
-  //   };
-  // }, [isResizing]);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+      // Re-enable pointer events on iframe
+      if (iframeRef.current) {
+        iframeRef.current.style.pointerEvents = "";
+      }
+    };
+  }, [isResizing]);
 
   if (ticket === undefined) {
     return <TicketDetailSkeleton />;
@@ -236,6 +245,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
         {/* Preview iframe on the left */}
         <div className="border-r" style={{ width: `${leftWidth}%` }}>
           <iframe
+            ref={iframeRef}
             src={ticket.previewUrl}
             className="h-full w-full"
             title="Preview"
