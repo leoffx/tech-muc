@@ -92,6 +92,16 @@ export const updateAgentStatus = mutation({
   },
 });
 
+export const updatePreviewUrl = mutation({
+  args: {
+    ticketId: v.id("tickets"),
+    previewUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.ticketId, { previewUrl: args.previewUrl });
+  },
+});
+
 export const updatePullRequestUrl = mutation({
   args: {
     ticketId: v.id("tickets"),

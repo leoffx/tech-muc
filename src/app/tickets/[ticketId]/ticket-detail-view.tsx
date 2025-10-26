@@ -56,7 +56,6 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   );
 
   const createPlan = api.plan.create.useMutation();
-  const createImplementation = api.plan.implement.useMutation();
 
   // Resizable panel state
   const [leftWidth, setLeftWidth] = useState(50); // percentage

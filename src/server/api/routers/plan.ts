@@ -326,6 +326,13 @@ export const planRouter = createTRPCRouter({
           agentStatus: "completed",
         });
 
+        if (finalization.preview?.latestUrl) {
+          await convex.mutation(api.tickets.updatePreviewUrl, {
+            ticketId,
+            previewUrl: finalization.preview.latestUrl,
+          });
+        }
+
         return {
           ticketId: input.ticketId,
           branch: branchName,

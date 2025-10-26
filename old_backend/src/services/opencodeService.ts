@@ -28,7 +28,7 @@ export const initializeOpencode = async (): Promise<OpencodeClient> => {
     logger.debug("Creating new OpenCode client");
     const { client } = await createOpencode({
       config: {
-        model: "openai/gpt-5-nano",
+        model: "openai/gpt-5-codex",
       },
     });
 
@@ -117,7 +117,7 @@ export const promptAgent = async (
     const promptResponse = await client.session.prompt({
       path: { id: activeSessionId },
       body: {
-        model: { providerID: "openai", modelID: "gpt-5-nano" },
+        model: { providerID: "openai", modelID: "gpt-5-codex" },
         parts: [{ type: "text", text: prompt }],
       },
       throwOnError: true,
