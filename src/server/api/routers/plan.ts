@@ -73,7 +73,7 @@ export const planRouter = createTRPCRouter({
 
       await convex.mutation(api.tickets.updateAgentStatus, {
         ticketId,
-        agentStatus: "implementing",
+        agentStatus: "planning",
       });
 
       const repoUrl = project.githubRepoUrl;
@@ -255,7 +255,7 @@ export const planRouter = createTRPCRouter({
         // Set agent status to in-progress when starting implementation
         await convex.mutation(api.tickets.updateAgentStatus, {
           ticketId,
-          agentStatus: "planning",
+          agentStatus: "implementing",
         });
 
         const implementation = await spawnImplementationClient({
