@@ -148,10 +148,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
         </span>
       </div>
 
-      <Button onClick={() => createImplementation.mutate({ ticketId })}>
-        Regenerate Implementation
-      </Button>
-      <Card>
+     <Card>
         <CardHeader>
           <CardTitle className="text-foreground text-3xl font-semibold">
             {ticket.title}
