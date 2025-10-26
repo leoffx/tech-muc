@@ -20,6 +20,7 @@ import {
 import { createWorkspaceOpencodeInstance } from "~/server/agent/opencode";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { findSimilarTasks, storeTask } from "~/server/weaviate/service";
+import { getCachedPlan, setCachedPlan } from "~/server/agent/plan-cache";
 
 function loadPlanPrompt() {
   return readFileSync(
@@ -50,6 +51,72 @@ export const planRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       const convex = createConvexClient();
       const ticketId = toTicketId(input.ticketId);
+
+      // Check if we have a cached plan for this ticket
+      const cachedPlan = getCachedPlan(input.ticketId);
+      if (cachedPlan) {
+        console.info("[PlanRouter] Serving cached plan for ticket", {
+          ticketId: input.ticketId,
+        });
+
+        await convex
+          .mutation(api.tickets.updateAgentStatus, {
+            ticketId,
+            agentStatus: "planning",
+          })
+          .catch((error) => {
+            console.error(
+              "[PlanRouter] Failed to update ticket plan from cache",
+              {
+                ticketId: input.ticketId,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            );
+          });
+
+        // Schedule DB update after 5 seconds
+        setTimeout(() => {
+          convex
+            .mutation(api.tickets.savePlan, {
+              ticketId,
+              plan: cachedPlan.markdown,
+            })
+            .catch((error) => {
+              console.error(
+                "[PlanRouter] Failed to update ticket plan from cache",
+                {
+                  ticketId: input.ticketId,
+                  error: error instanceof Error ? error.message : String(error),
+                },
+              );
+            });
+          convex
+            .mutation(api.tickets.updateAgentStatus, {
+              ticketId,
+              agentStatus: "completed",
+            })
+            .catch((error) => {
+              console.error(
+                "[PlanRouter] Failed to update ticket plan from cache",
+                {
+                  ticketId: input.ticketId,
+                  error: error instanceof Error ? error.message : String(error),
+                },
+              );
+            });
+        }, 5000);
+
+        return {
+          plan: {
+            ticketId: input.ticketId,
+            markdown: cachedPlan.markdown,
+            sessionId: cachedPlan.sessionId,
+            generatedAt: cachedPlan.generatedAt,
+          },
+          workspace: cachedPlan.workspace,
+        };
+      }
+
       const ticket = await convex.query(api.tickets.get, {
         ticketId,
       });
@@ -107,7 +174,7 @@ export const planRouter = createTRPCRouter({
 
       console.info("[PlanRouter] Generating plan for ticket", {
         ticketId: input.ticketId,
-        userPrompt: userPrompt
+        userPrompt: userPrompt,
       });
 
       const opencodeInstance = await createWorkspaceOpencodeInstance(
@@ -171,7 +238,7 @@ export const planRouter = createTRPCRouter({
           agentStatus: "completed",
         });
 
-        return {
+        const result = {
           plan: {
             ticketId: input.ticketId,
             markdown: planResult.markdown,
@@ -180,6 +247,21 @@ export const planRouter = createTRPCRouter({
           },
           workspace,
         };
+
+        // Cache the plan for future requests
+        setCachedPlan({
+          ticketId: input.ticketId,
+          markdown: planResult.markdown,
+          sessionId: planResult.client.sessionId,
+          generatedAt: result.plan.generatedAt,
+          workspace: {
+            workspacePath: workspace.workspacePath,
+            repoUrl: workspace.repoUrl,
+            branch: workspace.branch ?? null,
+          },
+        });
+
+        return result;
       } catch (error) {
         // Set agent status to failed on error
         await convex
@@ -479,7 +561,9 @@ function buildPlanPrompt(input: {
       "",
     );
     input.similarTasks.forEach((task, index) => {
-      sections.push(`#### Similar Task ${index + 1} (${Math.round(task.similarity * 100)}% match)`);
+      sections.push(
+        `#### Similar Task ${index + 1} (${Math.round(task.similarity * 100)}% match)`,
+      );
       sections.push(`**Title:** ${task.title}`);
       sections.push(`**Description:** ${task.description}`);
       if (task.plan) {
