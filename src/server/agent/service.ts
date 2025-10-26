@@ -1,5 +1,6 @@
+import type { OpencodeClient } from "@opencode-ai/sdk";
+import { rm, stat } from "node:fs/promises";
 import { agentEnvironmentManager } from "~/server/agent/workspace-manager";
-import { getOpencodeClient } from "~/server/agent/opencode";
 import type { AgentClientDescriptor } from "~/server/agent/workspace-manager";
 
 export interface EnsureTicketWorkspaceOptions {
@@ -19,6 +20,7 @@ export interface SpawnPlanClientOptions extends SpawnTicketClientOptions {
   prompt: {
     system: string;
   };
+  opencode: OpencodeClient;
 }
 
 export interface SpawnPlanResult {
@@ -31,6 +33,7 @@ export interface SpawnImplementationClientOptions
   prompt?: {
     system: string;
   };
+  opencode: OpencodeClient;
 }
 
 export interface SpawnImplementationResult {
@@ -77,6 +80,7 @@ export async function finalizeImplementationChanges(options: {
   ticketTitle: string;
   projectTitle: string;
   baseBranch: string;
+  opencode: OpencodeClient;
 }) {
   const workspace = await agentEnvironmentManager.getWorkspace(
     options.ticketId,
@@ -87,63 +91,75 @@ export async function finalizeImplementationChanges(options: {
     );
   }
 
+  await removeOpencodeArtifacts(workspace.workspacePath);
+
   const statusSummary = await workspace.getStatusSummary();
-  const diffStat = await workspace.getDiffStat();
+
+  const baseCandidates = new Set<string>();
+  const normalizedBase = options.baseBranch?.trim() ?? "";
+  if (normalizedBase.length > 0) {
+    if (normalizedBase.startsWith("origin/")) {
+      baseCandidates.add(normalizedBase);
+      baseCandidates.add(normalizedBase.replace(/^origin\//, ""));
+    } else {
+      baseCandidates.add(`origin/${normalizedBase}`);
+      baseCandidates.add(normalizedBase);
+    }
+  }
+
+  let diffReference: string | null = null;
+  let diffStat = "";
+  let commitsAhead: number | null = null;
+
+  for (const candidate of baseCandidates) {
+    const ahead = await workspace.countCommitsSince(candidate);
+    if (ahead === null) {
+      continue;
+    }
+    diffReference = candidate;
+    commitsAhead = ahead;
+    const comparativeStat = await workspace.getDiffStatComparedTo(candidate);
+    diffStat = comparativeStat ?? "";
+    break;
+  }
+
+  if (!diffReference) {
+    diffStat = await workspace.getDiffStat();
+  }
 
   console.info("[Implementation] Workspace change summary", {
     ticketId: options.ticketId,
     branchName: options.branchName,
     statusSummary,
     diffStat,
+    diffReference,
+    commitsAhead,
   });
 
-  const hasChanges = await workspace.hasUncommittedChanges();
-  if (!hasChanges) {
-    throw new Error("Implementation produced no changes to commit.");
+  const hasUncommittedChanges = await workspace.hasUncommittedChanges();
+  if (hasUncommittedChanges) {
+    throw new Error(
+      "Implementation must finish with a clean working tree. Commit and push all changes before finalization.",
+    );
   }
 
-  await workspace.stageAllChanges();
+  if (diffReference && typeof commitsAhead === "number" && commitsAhead <= 0) {
+    throw new Error(
+      "Implementation branch has no commits ahead of the base branch. Create readable commits before finalizing.",
+    );
+  }
 
-  const commitMessage = await generateCommitMessage({
-    sessionId: options.sessionId,
-    plan: options.plan,
-    statusSummary,
-    diffStat,
-    branchName: options.branchName,
-    ticketTitle: options.ticketTitle,
-    projectTitle: options.projectTitle,
-    ticketId: options.ticketId,
-  });
-
-  const commitSha = await workspace.commitStagedChanges(commitMessage);
-  await workspace.pushCurrentBranch();
-
-  const prSummary = await generatePullRequestDescription({
-    sessionId: options.sessionId,
-    plan: options.plan,
-    statusSummary,
-    diffStat,
-    commitMessage,
-    ticketTitle: options.ticketTitle,
-    projectTitle: options.projectTitle,
-    baseBranch: options.baseBranch,
-  });
-
-  const pullRequest = await workspace.ensurePullRequest({
+  const commitSummary = await workspace.getHeadCommitSummary();
+  const pullRequest = await workspace.getPullRequestSnapshot({
     branchName: options.branchName,
     baseBranch: options.baseBranch,
-    title: commitMessage,
-    body: prSummary,
   });
 
   return {
     statusSummary,
     diffStat,
-    commit: {
-      message: commitMessage,
-      sha: commitSha,
-    },
-    pullRequest: pullRequest ?? null,
+    commit: commitSummary,
+    pullRequest,
   };
 }
 
@@ -155,13 +171,15 @@ export async function spawnPlanClient(
   const client = await agentEnvironmentManager.spawnClient({
     ...spawnOptions,
     role: "plan",
+    opencode: options.opencode,
   });
 
-  const opencode = await getOpencodeClient();
-
-  const response = await opencode.session.prompt({
+  const response = await options.opencode.session.prompt({
     path: {
       id: client.sessionId,
+    },
+    query: {
+      directory: client.workspacePath,
     },
     body: {
       system: prompt.system,
@@ -196,6 +214,7 @@ export async function spawnImplementationClient(
   const client = await agentEnvironmentManager.spawnClient({
     ...spawnOptions,
     role: "implementation",
+    opencode: options.opencode,
   });
 
   if (!prompt) {
@@ -204,10 +223,12 @@ export async function spawnImplementationClient(
     };
   }
 
-  const opencode = await getOpencodeClient();
-  const response = await opencode.session.prompt({
+  const response = await options.opencode.session.prompt({
     path: {
       id: client.sessionId,
+    },
+    query: {
+      directory: client.workspacePath,
     },
     body: {
       system: prompt.system,
@@ -232,13 +253,6 @@ export async function spawnImplementationClient(
     client,
     initialResponse: acknowledgement,
   };
-}
-
-export async function spawnGeneralClient(options: SpawnTicketClientOptions) {
-  return agentEnvironmentManager.spawnClient({
-    ...options,
-    role: "general",
-  });
 }
 
 function extractTextFromPromptResponse(
@@ -275,143 +289,15 @@ function isTextPart(part: unknown): part is { type: "text"; text: string } {
   return candidate.type === "text" && typeof candidate.text === "string";
 }
 
-async function generateCommitMessage(options: {
-  sessionId: string;
-  plan: string;
-  statusSummary: string;
-  diffStat: string;
-  branchName: string;
-  ticketTitle: string;
-  projectTitle: string;
-  ticketId: string;
-}) {
-  const opencode = await getOpencodeClient();
-  const planExcerpt =
-    options.plan.length > 2_000
-      ? `${options.plan.slice(0, 2_000)}\n\n... (truncated)`
-      : options.plan;
+export async function removeOpencodeArtifacts(workspacePath: string) {
+  const opencodeDir = `${workspacePath}/.opencode`;
 
-  const promptText = [
-    "Create a concise git commit message summarizing the implemented changes.",
-    "Constraints:",
-    "- Single line, maximum 72 characters.",
-    '- Imperative mood (e.g., "Add", "Fix").',
-    "- Follow Conventional Commits (feat|fix|chore|docs|refactor|test|build|ci|perf|style) with optional scope.",
-    "- No surrounding quotes or trailing punctuation.",
-    "- Mention the ticket context when useful.",
-    "",
-    `Ticket: ${options.ticketId} — ${options.ticketTitle}`,
-    `Project: ${options.projectTitle}`,
-    `Branch: ${options.branchName}`,
-    "",
-    "Implementation plan excerpt:",
-    wrapAsCodeFence(planExcerpt, "markdown"),
-    "",
-    "Git status summary:",
-    wrapAsCodeFence(options.statusSummary || "(clean)", ""),
-    "",
-    "Diff stats:",
-    wrapAsCodeFence(options.diffStat || "(empty)", ""),
-  ].join("\n");
-
-  const response = await opencode.session.prompt({
-    path: {
-      id: options.sessionId,
-    },
-    body: {
-      parts: [
-        {
-          type: "text",
-          text: promptText,
-        },
-      ],
-    },
-    throwOnError: true,
-  });
-
-  const rawMessage = extractTextFromPromptResponse(
-    response,
-    "Commit message generation failed.",
-  );
-
-  const firstLine = rawMessage.split(/\r?\n/)[0]?.trim() ?? "";
-  const normalized = firstLine.replace(/^["'`]+|["'`]+$/g, "");
-  const sliced =
-    normalized.length > 72
-      ? normalized.slice(0, 72).replace(/\s+\S*$/, "")
-      : normalized;
-  const conventionalPattern =
-    /^(feat|fix|chore|docs|refactor|test|build|ci|perf|style)(\([^)]+\))?:\s.+/;
-  if (sliced.length === 0 || !conventionalPattern.test(sliced)) {
-    const summary = options.ticketTitle || `ticket ${options.ticketId}`;
-    const base = `feat: ${summary}`;
-    const trimmed = base.length > 72 ? `${base.slice(0, 69)}...` : base;
-    return trimmed;
+  try {
+    const info = await stat(opencodeDir);
+    if (info.isDirectory()) {
+      await rm(opencodeDir, { recursive: true, force: true });
+    }
+  } catch {
+    // ignore cleanup errors
   }
-  return sliced;
-}
-
-async function generatePullRequestDescription(options: {
-  sessionId: string;
-  plan: string;
-  statusSummary: string;
-  diffStat: string;
-  commitMessage: string;
-  ticketTitle: string;
-  projectTitle: string;
-  baseBranch: string;
-}) {
-  const opencode = await getOpencodeClient();
-  const promptText = [
-    "Draft a pull request description in Markdown summarizing the implementation progress.",
-    "Structure the output with headings: Summary, Changes, Testing, Risks.",
-    "Use concise bullet points, highlight key commits, and tie back to the approved plan.",
-    "If testing was not run, explicitly state what still needs coverage.",
-    "Close with an Action Items checklist if follow-ups remain.",
-    "",
-    `Commit: ${options.commitMessage}`,
-    `Ticket: ${options.ticketTitle}`,
-    `Project: ${options.projectTitle}`,
-    `Base Branch: ${options.baseBranch}`,
-    "",
-    "Plan excerpt:",
-    wrapAsCodeFence(
-      options.plan.length > 2_000
-        ? `${options.plan.slice(0, 2_000)}\n\n... (truncated)`
-        : options.plan,
-      "markdown",
-    ),
-    "",
-    "Git status summary:",
-    wrapAsCodeFence(options.statusSummary || "(clean)", ""),
-    "",
-    "Diff stats:",
-    wrapAsCodeFence(options.diffStat || "(empty)", ""),
-  ].join("\n");
-
-  const response = await opencode.session.prompt({
-    path: {
-      id: options.sessionId,
-    },
-    body: {
-      parts: [
-        {
-          type: "text",
-          text: promptText,
-        },
-      ],
-    },
-    throwOnError: true,
-  });
-
-  return extractTextFromPromptResponse(
-    response,
-    "Pull request description generation failed.",
-  );
-}
-
-function wrapAsCodeFence(content: string, language: string) {
-  const sanitized = content.trim();
-  const fenceLanguage = language ? `${language}` : "";
-  return ["```" + fenceLanguage, sanitized || "(empty)", "```"].join("\n");
 }

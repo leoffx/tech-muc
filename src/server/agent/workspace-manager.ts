@@ -4,7 +4,7 @@ import { access, mkdir, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { getOpencodeClient } from "~/server/agent/opencode";
+import type { OpencodeClient } from "@opencode-ai/sdk";
 
 const execFileAsync = promisify(execFile);
 const gitEnvironment = Object.freeze({
@@ -64,6 +64,7 @@ interface SpawnClientInput {
   branch?: string;
   role: AgentClientRole;
   metadata?: Record<string, unknown>;
+  opencode: OpencodeClient;
 }
 
 export class AgentEnvironmentManager {
@@ -110,7 +111,7 @@ export class AgentEnvironmentManager {
 
   async spawnClient(input: SpawnClientInput) {
     const workspace = await this.getOrCreateWorkspaceForClient(input);
-    return workspace.spawnClient(input.role, input.metadata);
+    return workspace.spawnClient(input.role, input.metadata, input.opencode);
   }
 
   async getWorkspace(ticketId: string) {
@@ -258,8 +259,11 @@ class Workspace {
     await runGit(this.cloneArgs());
   }
 
-  async spawnClient(role: AgentClientRole, metadata?: Record<string, unknown>) {
-    const opencode = await getOpencodeClient();
+  async spawnClient(
+    role: AgentClientRole,
+    metadata: Record<string, unknown> | undefined,
+    opencode: OpencodeClient,
+  ) {
     const potentialTitle = metadata?.title;
     const title =
       typeof potentialTitle === "string" && potentialTitle.trim().length > 0
@@ -418,12 +422,143 @@ class Workspace {
     return stdout.trim();
   }
 
+  async getDiffStatComparedTo(ref: string) {
+    const candidate = ref.trim();
+    if (!candidate) {
+      return null;
+    }
+
+    const gitDir = this.workspacePath;
+    try {
+      const { stdout } = await runGit(["diff", "--stat", `${candidate}..HEAD`], {
+        cwd: gitDir,
+      });
+      return stdout.trim();
+    } catch {
+      return null;
+    }
+  }
+
+  async countCommitsSince(ref: string) {
+    const candidate = ref.trim();
+    if (!candidate) {
+      return null;
+    }
+
+    const gitDir = this.workspacePath;
+    try {
+      const { stdout } = await runGit(["rev-list", "--count", `${candidate}..HEAD`], {
+        cwd: gitDir,
+      });
+      const trimmed = stdout.trim();
+      if (!trimmed) {
+        return 0;
+      }
+      const parsed = Number.parseInt(trimmed, 10);
+      return Number.isNaN(parsed) ? 0 : parsed;
+    } catch {
+      return null;
+    }
+  }
+
+  async getHeadCommitSummary() {
+    const gitDir = this.workspacePath;
+    try {
+      const { stdout } = await runGit(["log", "-1", "--pretty=%H%n%B"], {
+        cwd: gitDir,
+      });
+      const [shaLine, ...messageLines] = stdout.split(/\r?\n/);
+      if (!shaLine) {
+        return null;
+      }
+      const sha = shaLine.trim();
+      if (!sha) {
+        return null;
+      }
+      const summary =
+        messageLines.find((line) => line.trim().length > 0)?.trim() ?? "";
+      return {
+        sha,
+        message: summary,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async getPullRequestSnapshot(params: { branchName: string; baseBranch: string }) {
+    const gitDir = this.workspacePath;
+    const existing = await this.findExistingPullRequest(params.branchName, gitDir);
+    if (!existing) {
+      return null;
+    }
+
+    try {
+      const { stdout } = await runGh(
+        [
+          "pr",
+          "view",
+          String(existing.number),
+          "--json",
+          "number,url,title,headRefName,baseRefName,state",
+        ],
+        { cwd: gitDir },
+      );
+      const details = JSON.parse(stdout) as {
+        number?: number;
+        url?: string;
+        headRefName?: string;
+        baseRefName?: string;
+        state?: string;
+      };
+
+      return {
+        number: typeof details.number === "number" ? details.number : existing.number,
+        url: typeof details.url === "string" ? details.url : existing.url,
+        head:
+          typeof details.headRefName === "string"
+            ? details.headRefName
+            : params.branchName,
+        base:
+          typeof details.baseRefName === "string"
+            ? details.baseRefName
+            : params.baseBranch,
+        state: typeof details.state === "string" ? details.state : "OPEN",
+        updated: false,
+      };
+    } catch (error) {
+      console.warn("[AgentWorkspace] Unable to view existing PR", {
+        ticketId: this.ticketId,
+        branch: params.branchName,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return {
+        number: existing.number,
+        url: existing.url,
+        head: params.branchName,
+        base: params.baseBranch,
+        state: "UNKNOWN",
+        updated: false,
+      };
+    }
+  }
+
   async hasUncommittedChanges() {
     const gitDir = this.workspacePath;
     const { stdout } = await runGit(["status", "--porcelain"], {
       cwd: gitDir,
     });
     return stdout.trim().length > 0;
+  }
+
+  async hasStagedChanges() {
+    const gitDir = this.workspacePath;
+    try {
+      await runGit(["diff", "--cached", "--quiet"], { cwd: gitDir });
+      return false;
+    } catch {
+      return true;
+    }
   }
 
   async stageAllChanges() {

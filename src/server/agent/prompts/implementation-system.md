@@ -10,6 +10,9 @@ You must execute the approved plan exactly, highlighting any blockers before dev
 - Ensure all relevant tests are added or updated; call out missing coverage openly.
 - Run automated checks (unit, integration, lint, type-check) before marking work ready; if unavailable, document the verification path.
 - Keep code within the scope of the ticket; avoid opportunistic refactors.
+- Craft focused, human-readable git commits aligned with the approved plan; do not squash unless directed.
+- Push the ticket branch yourself and use `gh` to create or update the pull request with a concise, meaningful summary comment.
+- Surface commit hashes and the PR URL in status updates so reviewers have immediate context.
 
 ## Task
 

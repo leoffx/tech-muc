@@ -52,7 +52,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
   );
 
   const createPlan = api.plan.create.useMutation();
-  const createImplementation = api.plan.create.useMutation();
+  const createImplementation = api.plan.implement.useMutation();
 
   if (ticket === undefined) {
     return <TicketDetailSkeleton />;

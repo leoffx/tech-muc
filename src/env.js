@@ -12,6 +12,7 @@ export const env = createEnv({
     OPENCODE_MODEL: z.string().default("openai/gpt-5-codex"),
     OPENCODE_ENDPOINT: z.string().url().optional(),
     CONVEX_URL: z.string().url(),
+    GH_TOKEN: z.string().min(1).optional(),
   },
 
   /**
@@ -34,6 +35,7 @@ export const env = createEnv({
     OPENCODE_ENDPOINT: process.env.OPENCODE_ENDPOINT,
     CONVEX_URL:
       process.env.CONVEX_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL,
+    GH_TOKEN: process.env.GH_TOKEN,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

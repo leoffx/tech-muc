@@ -12,9 +12,11 @@ import {
   getTicketWorkspace,
   finalizeImplementationChanges,
   prepareImplementationBranch,
+  removeOpencodeArtifacts,
   spawnImplementationClient,
   spawnPlanClient,
 } from "~/server/agent/service";
+import { createWorkspaceOpencodeInstance } from "~/server/agent/opencode";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 const promptTemplates = {
@@ -74,37 +76,49 @@ export const planRouter = createTRPCRouter({
         workspaceBranch: workspace.branch ?? null,
       });
 
-      const planResult = await spawnPlanClient({
-        ticketId: input.ticketId,
-        repoUrl: workspace.repoUrl,
-        branch: workspace.branch,
-        metadata: {
-          purpose: "plan",
+      const opencodeInstance = await createWorkspaceOpencodeInstance(workspace.workspacePath);
+      try {
+        const planResult = await spawnPlanClient({
           ticketId: input.ticketId,
           repoUrl: workspace.repoUrl,
-          branch: workspace.branch ?? null,
-          projectId: project._id,
-          projectTitle: project.title,
-        },
-        prompt: {
-          system: systemPrompt,
-        },
-      });
+          branch: workspace.branch,
+          metadata: {
+            purpose: "plan",
+            ticketId: input.ticketId,
+            repoUrl: workspace.repoUrl,
+            branch: workspace.branch ?? null,
+            projectId: project._id,
+            projectTitle: project.title,
+          },
+          prompt: {
+            system: systemPrompt,
+          },
+          opencode: opencodeInstance.client,
+        });
 
-      await convex.mutation(api.tickets.savePlan, {
-        ticketId,
-        plan: planResult.markdown,
-      });
+        await convex.mutation(api.tickets.savePlan, {
+          ticketId,
+          plan: planResult.markdown,
+        });
 
-      return {
-        plan: {
-          ticketId: input.ticketId,
-          markdown: planResult.markdown,
-          sessionId: planResult.client.sessionId,
-          generatedAt: new Date().toISOString(),
-        },
-        workspace,
-      };
+        return {
+          plan: {
+            ticketId: input.ticketId,
+            markdown: planResult.markdown,
+            sessionId: planResult.client.sessionId,
+            generatedAt: new Date().toISOString(),
+          },
+          workspace,
+        };
+      } finally {
+        opencodeInstance.close();
+        await removeOpencodeArtifacts(workspace.workspacePath).catch((error) => {
+          console.warn("[PlanRouter] Failed to cleanup opencode artifacts", {
+            workspacePath: workspace.workspacePath,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        });
+      }
     }),
   implement: publicProcedure
     .input(
@@ -174,63 +188,76 @@ export const planRouter = createTRPCRouter({
         branchName,
       });
 
-      const implementation = await spawnImplementationClient({
-        ticketId: input.ticketId,
-        repoUrl: workspace.repoUrl,
-        branch: branchName,
-        metadata: {
-          purpose: "implementation",
+      const opencodeInstance = await createWorkspaceOpencodeInstance(workspace.workspacePath);
+      try {
+        const implementation = await spawnImplementationClient({
           ticketId: input.ticketId,
           repoUrl: workspace.repoUrl,
           branch: branchName,
-          projectId: project._id,
-          projectTitle: project.title,
-          baseBranch,
-        },
-        prompt: {
-          system: systemPrompt,
-        },
-      });
+          metadata: {
+            purpose: "implementation",
+            ticketId: input.ticketId,
+            repoUrl: workspace.repoUrl,
+            branch: branchName,
+            projectId: project._id,
+            projectTitle: project.title,
+            baseBranch,
+          },
+          prompt: {
+            system: systemPrompt,
+          },
+          opencode: opencodeInstance.client,
+        });
 
-      const finalization = await finalizeImplementationChanges({
-        ticketId: input.ticketId,
-        branchName,
-        plan: ticket.plan,
-        sessionId: implementation.client.sessionId,
-        ticketTitle: ticket.title,
-        projectTitle: project.title,
-        baseBranch,
-      }).catch((error: unknown) => {
-        console.error("[PlanRouter] Failed to finalize implementation", {
+        const finalization = await finalizeImplementationChanges({
           ticketId: input.ticketId,
           branchName,
-          error: error instanceof Error ? error.message : String(error),
+          plan: ticket.plan,
+          sessionId: implementation.client.sessionId,
+          ticketTitle: ticket.title,
+          projectTitle: project.title,
+          baseBranch,
+          opencode: opencodeInstance.client,
+        }).catch((error: unknown) => {
+          console.error("[PlanRouter] Failed to finalize implementation", {
+            ticketId: input.ticketId,
+            branchName,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Unable to finalize implementation changes.",
+          });
         });
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            error instanceof Error
-              ? error.message
-              : "Unable to finalize implementation changes.",
+
+        const refreshedWorkspace = await getTicketWorkspace(input.ticketId);
+
+        return {
+          ticketId: input.ticketId,
+          branch: branchName,
+          plan: ticket.plan,
+          sessionId: implementation.client.sessionId,
+          workspace: refreshedWorkspace ?? workspace,
+          acknowledgement: implementation.initialResponse ?? null,
+          changes: {
+            status: finalization.statusSummary,
+            diffStat: finalization.diffStat,
+          },
+          commit: finalization.commit,
+          pullRequest: finalization.pullRequest,
+        };
+      } finally {
+        opencodeInstance.close();
+        await removeOpencodeArtifacts(workspace.workspacePath).catch((error) => {
+          console.warn("[PlanRouter] Failed to cleanup opencode artifacts", {
+            workspacePath: workspace.workspacePath,
+            error: error instanceof Error ? error.message : String(error),
+          });
         });
-      });
-
-      const refreshedWorkspace = await getTicketWorkspace(input.ticketId);
-
-      return {
-        ticketId: input.ticketId,
-        branch: branchName,
-        plan: ticket.plan,
-        sessionId: implementation.client.sessionId,
-        workspace: refreshedWorkspace ?? workspace,
-        acknowledgement: implementation.initialResponse ?? null,
-        changes: {
-          status: finalization.statusSummary,
-          diffStat: finalization.diffStat,
-        },
-        commit: finalization.commit,
-        pullRequest: finalization.pullRequest,
-      };
+      }
     }),
 });
 
