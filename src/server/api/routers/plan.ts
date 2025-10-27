@@ -317,26 +317,11 @@ export const planRouter = createTRPCRouter({
           });
         }
 
-        if (finalization.preview?.commitUrl) {
-          console.info("[PlanRouter] Preview deployment completed", {
-            ticketId: input.ticketId,
-            commitUrl: finalization.preview.commitUrl,
-            latestUrl: finalization.preview.latestUrl ?? null,
-          });
-        }
-
         // Set agent status to completed after successful implementation
         await convex.mutation(api.tickets.updateAgentStatus, {
           ticketId,
           agentStatus: "completed",
         });
-
-        if (finalization.preview?.latestUrl) {
-          await convex.mutation(api.tickets.updatePreviewUrl, {
-            ticketId,
-            previewUrl: finalization.preview.latestUrl,
-          });
-        }
 
         return {
           ticketId: input.ticketId,
@@ -351,7 +336,6 @@ export const planRouter = createTRPCRouter({
           },
           commit: finalization.commit,
           pullRequest: finalization.pullRequest,
-          preview: finalization.preview,
         };
       } catch (error) {
         // Set agent status to failed on error

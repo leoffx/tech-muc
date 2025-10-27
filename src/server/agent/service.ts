@@ -3,7 +3,6 @@ import { rm, stat } from "node:fs/promises";
 import { agentEnvironmentManager } from "~/server/agent/workspace-manager";
 import type {
   AgentClientDescriptor,
-  PreviewDeploymentResult,
 } from "~/server/agent/workspace-manager";
 
 export interface EnsureTicketWorkspaceOptions {
@@ -160,17 +159,12 @@ export async function finalizeImplementationChanges(options: {
     branchName: options.branchName,
     baseBranch: options.baseBranch,
   });
-  const preview: PreviewDeploymentResult | null = await workspace.deployPreview({
-    projectId: options.projectId,
-    ticketId: options.ticketId,
-  });
 
   return {
     statusSummary,
     diffStat,
     commit: commitSummary,
     pullRequest,
-    preview,
   };
 }
 

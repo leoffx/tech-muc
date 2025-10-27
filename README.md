@@ -14,7 +14,6 @@ Tech MUC streamlines software development by:
 
 - **AI Agent Automation**: Automatically implements tickets using OpenCode AI agents
 - **Real-Time Collaboration**: Live updates via Convex backend
-- **Preview Deployments**: Automatic static build previews for every implementation
 - **GitHub Integration**: Creates pull requests automatically from completed work
 - **Project Management**: Kanban-style boards with drag-and-drop ticket organization
 
@@ -27,7 +26,6 @@ Tech MUC streamlines software development by:
 - **Node.js** 20+ and npm 10+
 - **Convex Account**: [Sign up at convex.dev](https://convex.dev)
 - **OpenAI API Key**: [Get from platform.openai.com](https://platform.openai.com)
-- **AWS S3** (optional): For preview deployments
 - **GitHub Token** (optional): For automatic PR creation
 
 ### Installation
@@ -50,7 +48,6 @@ cp .env.example .env
 # - CONVEX_URL (from Convex dashboard)
 # - OPENAI_API_KEY (for AI agent)
 # - GH_TOKEN (optional, for GitHub PR creation)
-# - PREVIEW_BUCKET, PREVIEW_REGION (optional, for S3 previews)
 ```
 
 Visit **http://localhost:9000** (production) or **http://localhost:3000** (development).
@@ -95,13 +92,9 @@ User creates a ticket with description → AI agent analyzes requirements → Ge
 
 ### 2. Implementation Phase
 
-Agent executes plan → Writes code in linked GitHub repository → Runs tests and checks → Builds static preview
+Agent executes plan → Writes code in linked GitHub repository → Runs tests and checks
 
-### 3. Preview Deployment
-
-Builds project (`npm run preview:build`) → Uploads to S3 bucket → Stores URL in `ticket.previewUrl` → Creates `/latest/` mirror
-
-### 4. PR Creation
+### 3. PR Creation
 
 Creates GitHub PR with changes → Links PR URL to `ticket.pullRequestUrl` → Marks ticket as done
 
@@ -125,9 +118,4 @@ GH_TOKEN=ghp_...                              # For automatic PR creation
 # OpenCode Configuration
 OPENCODE_MODEL=openai/gpt-5-codex             # Default AI model
 OPENCODE_ENDPOINT=https://custom.endpoint     # Override OpenCode API
-
-# Preview Deployments
-PREVIEW_BUCKET=tech-munich                    # S3 bucket name
-PREVIEW_REGION=eu-central-1                   # AWS region
-PREVIEW_WEBSITE_BASE_URL=https://previews.example.com  # Custom domain
 ```

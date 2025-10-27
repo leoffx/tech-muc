@@ -1,11 +1,10 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { access, mkdir, rm, stat, readFile } from "node:fs/promises";
+import { access, mkdir, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
 import type { OpencodeClient } from "@opencode-ai/sdk";
-import { env } from "~/env";
 
 const execFileAsync = promisify(execFile);
 const gitEnvironment = Object.freeze({
@@ -53,16 +52,6 @@ export interface AgentWorkspaceDescriptor {
   clients: AgentClientDescriptor[];
 }
 
-export interface PreviewDeploymentResult {
-  commit: string;
-  shortCommit: string;
-  commitUrl: string;
-  latestUrl: string;
-  bucket: string;
-  region: string;
-  buildScript: string;
-  distPath: string;
-}
 
 interface CreateWorkspaceInput {
   ticketId: string;
@@ -330,136 +319,6 @@ class Workspace {
     return descriptor;
   }
 
-  async deployPreview(input: { projectId: string; ticketId: string }) {
-    const bucket = env.PREVIEW_BUCKET;
-    const region = env.PREVIEW_REGION;
-    const websiteBaseUrl =
-      env.PREVIEW_WEBSITE_BASE_URL ??
-      `http://${bucket}.s3-website-${region}.amazonaws.com`;
-
-    const packageJsonPath = path.join(this.workspacePath, "package.json");
-    const buildScript = await this.resolveBuildScript(packageJsonPath);
-
-    if (!buildScript) {
-      console.info("[AgentWorkspace] Preview deployment skipped", {
-        ticketId: this.ticketId,
-        projectId: input.projectId,
-        reason: "missing-build-script",
-      });
-      return null;
-    }
-
-    const distDir = path.join(this.workspacePath, "dist");
-
-    try {
-      await this.ensure();
-
-      await this.installDependencies();
-
-      console.info("[AgentWorkspace] Starting preview build", {
-        ticketId: this.ticketId,
-        projectId: input.projectId,
-        buildScript,
-      });
-
-      await execFileAsync("npm", ["run", buildScript], {
-        cwd: this.workspacePath,
-        env: process.env,
-        windowsHide: true,
-      });
-
-      const distExists = await this.pathExists(distDir);
-      if (!distExists) {
-        console.warn("[AgentWorkspace] Preview deployment aborted - dist directory missing", {
-          ticketId: this.ticketId,
-          projectId: input.projectId,
-          distDir,
-        });
-        return null;
-      }
-
-      const [{ stdout: fullSha }, { stdout: shortSha }] = await Promise.all([
-        runGit(["rev-parse", "HEAD"], { cwd: this.workspacePath }),
-        runGit(["rev-parse", "--short", "HEAD"], { cwd: this.workspacePath }),
-      ]);
-
-      const commit = fullSha.trim();
-      if (!commit) {
-        console.warn("[AgentWorkspace] Preview deployment aborted - unable to resolve commit sha", {
-          ticketId: this.ticketId,
-          projectId: input.projectId,
-        });
-        return null;
-      }
-      const shortCommit =
-        shortSha.trim().length > 0 ? shortSha.trim() : commit.slice(0, 7);
-
-      const commitPrefix = `${input.projectId}/${input.ticketId}/${commit}`;
-      const latestPrefix = `${input.projectId}/${input.ticketId}/latest`;
-      const commitDestination = `s3://${bucket}/${commitPrefix}/`;
-      const latestDestination = `s3://${bucket}/${latestPrefix}/`;
-
-      console.info("[AgentWorkspace] Uploading preview artifacts", {
-        ticketId: this.ticketId,
-        projectId: input.projectId,
-        bucket,
-        region,
-        commitPrefix,
-        latestPrefix,
-      });
-
-      await execFileAsync(
-        "aws",
-        ["s3", "sync", distDir, commitDestination, "--region", region, "--delete"],
-        {
-          cwd: this.workspacePath,
-          env: process.env,
-          windowsHide: true,
-        },
-      );
-
-      await execFileAsync(
-        "aws",
-        ["s3", "sync", distDir, latestDestination, "--region", region, "--delete"],
-        {
-          cwd: this.workspacePath,
-          env: process.env,
-          windowsHide: true,
-        },
-      );
-
-      const normalizedBase = websiteBaseUrl.replace(/\/+$/, "");
-      const commitUrl = `${normalizedBase}/${commitPrefix}/`;
-      const latestUrl = `${normalizedBase}/${latestPrefix}/`;
-
-      console.info("[AgentWorkspace] Preview deployment completed", {
-        ticketId: this.ticketId,
-        projectId: input.projectId,
-        commitUrl,
-        latestUrl,
-        buildScript,
-        commit,
-      });
-
-      return {
-        commit,
-        shortCommit,
-        commitUrl,
-        latestUrl,
-        bucket,
-        region,
-        buildScript,
-        distPath: distDir,
-      };
-    } catch (error) {
-      console.warn("[AgentWorkspace] Preview deployment failed", {
-        ticketId: this.ticketId,
-        projectId: input.projectId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return null;
-    }
-  }
 
   async createAndPushBranch(branchName: string, baseRef?: string) {
     await this.ensure();
@@ -947,54 +806,6 @@ class Workspace {
     }
   }
 
-  private async resolveBuildScript(packageJsonPath: string) {
-    try {
-      const raw = await readFile(packageJsonPath, "utf8");
-      const pkg = JSON.parse(raw) as {
-        scripts?: Record<string, unknown>;
-      };
-      const scripts = pkg.scripts ?? {};
-      const previewBuild = scripts["preview:build"];
-      if (typeof previewBuild === "string" && previewBuild.trim().length > 0) {
-        return "preview:build";
-      }
-      const defaultBuild = scripts.build;
-      if (typeof defaultBuild === "string" && defaultBuild.trim().length > 0) {
-        return "build";
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  }
-
-  private async installDependencies() {
-    const packageJsonPath = path.join(this.workspacePath, "package.json");
-    const hasPackageJson = await this.pathExists(packageJsonPath);
-    if (!hasPackageJson) {
-      console.info("[AgentWorkspace] Skipping dependency install (no package.json)", {
-        ticketId: this.ticketId,
-      });
-      return false;
-    }
-
-    console.info("[AgentWorkspace] Installing dependencies", {
-      ticketId: this.ticketId,
-      workspacePath: this.workspacePath,
-    });
-
-    await execFileAsync(
-      "npm",
-      ["install", "--no-audit", "--no-fund", "--progress=false"],
-      {
-        cwd: this.workspacePath,
-        env: process.env,
-        windowsHide: true,
-      },
-    );
-
-    return true;
-  }
 
   private async pathExists(target: string) {
     try {

@@ -13,9 +13,6 @@ export const env = createEnv({
     OPENCODE_ENDPOINT: z.string().url().optional(),
     CONVEX_URL: z.string().url(),
     GH_TOKEN: z.string().min(1).optional(),
-    PREVIEW_BUCKET: z.string().min(1).default("tech-munich"),
-    PREVIEW_REGION: z.string().min(1).default("eu-central-1"),
-    PREVIEW_WEBSITE_BASE_URL: z.string().url().optional(),
   },
 
   /**
@@ -39,9 +36,6 @@ export const env = createEnv({
     CONVEX_URL:
       process.env.CONVEX_URL ?? process.env.NEXT_PUBLIC_CONVEX_URL,
     GH_TOKEN: process.env.GH_TOKEN,
-    PREVIEW_BUCKET: process.env.PREVIEW_BUCKET,
-    PREVIEW_REGION: process.env.PREVIEW_REGION,
-    PREVIEW_WEBSITE_BASE_URL: process.env.PREVIEW_WEBSITE_BASE_URL,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**
