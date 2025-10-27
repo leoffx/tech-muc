@@ -16,9 +16,6 @@ export const env = createEnv({
     PREVIEW_BUCKET: z.string().min(1).default("tech-munich"),
     PREVIEW_REGION: z.string().min(1).default("eu-central-1"),
     PREVIEW_WEBSITE_BASE_URL: z.string().url().optional(),
-    WEAVIATE_SCHEME: z.enum(["http", "https"]).default("http"),
-    WEAVIATE_HOST: z.string().default("localhost:8080"),
-    WEAVIATE_API_KEY: z.string().optional(),
   },
 
   /**
@@ -45,9 +42,6 @@ export const env = createEnv({
     PREVIEW_BUCKET: process.env.PREVIEW_BUCKET,
     PREVIEW_REGION: process.env.PREVIEW_REGION,
     PREVIEW_WEBSITE_BASE_URL: process.env.PREVIEW_WEBSITE_BASE_URL,
-    WEAVIATE_SCHEME: process.env.WEAVIATE_SCHEME,
-    WEAVIATE_HOST: process.env.WEAVIATE_HOST,
-    WEAVIATE_API_KEY: process.env.WEAVIATE_API_KEY,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

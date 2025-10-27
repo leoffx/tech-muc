@@ -19,7 +19,6 @@ import {
 } from "~/server/agent/service";
 import { createWorkspaceOpencodeInstance } from "~/server/agent/opencode";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { findSimilarTasks, storeTask } from "~/server/weaviate/service";
 
 function loadPlanPrompt() {
   return readFileSync(
@@ -90,19 +89,11 @@ export const planRouter = createTRPCRouter({
         repoUrl,
       });
 
-      // Query Weaviate for similar tasks
-      const similarTasks = await findSimilarTasks(
-        ticket.description ?? ticket.title,
-        5,
-        0.75,
-      );
-
       const userPrompt = buildPlanPrompt({
         ticket,
         project,
         workspaceRepoUrl: workspace.repoUrl,
         workspaceBranch: workspace.branch ?? null,
-        similarTasks,
       });
 
       console.info("[PlanRouter] Generating plan for ticket", {
@@ -147,22 +138,6 @@ export const planRouter = createTRPCRouter({
         await convex.mutation(api.tickets.savePlan, {
           ticketId,
           plan: planResult.markdown,
-        });
-
-        // Store task in Weaviate for future similarity searches
-        await storeTask({
-          ticketId: input.ticketId,
-          title: ticket.title,
-          description: ticket.description ?? "",
-          plan: planResult.markdown,
-          projectId: project._id,
-          projectTitle: project.title,
-          createdAt: new Date().toISOString(),
-        }).catch((error) => {
-          console.error("[PlanRouter] Failed to store task in Weaviate", {
-            ticketId: input.ticketId,
-            error: error instanceof Error ? error.message : String(error),
-          });
         });
 
         // Set agent status to completed after successful plan generation
@@ -447,12 +422,6 @@ function buildPlanPrompt(input: {
   project: Doc<"projects">;
   workspaceRepoUrl: string;
   workspaceBranch: string | null;
-  similarTasks?: Array<{
-    title: string;
-    description: string;
-    plan?: string;
-    similarity: number;
-  }>;
 }) {
   const contextLines = [
     `Ticket ID: ${input.ticket._id}`,
@@ -463,34 +432,14 @@ function buildPlanPrompt(input: {
     `Branch: ${input.workspaceBranch ?? "default"}`,
   ];
 
-  const sections = [
+  return [
     "## Context",
     ...contextLines.map((line) => `- ${line}`),
     "",
     "### Ticket Description",
     indentBlock(input.ticket.description ?? "No description provided."),
     "",
-  ];
-
-  if (input.similarTasks && input.similarTasks.length > 0) {
-    sections.push("### Similar Tasks from History");
-    sections.push(
-      "The following similar tasks have been completed in the past. Use them as reference for planning:",
-      "",
-    );
-    input.similarTasks.forEach((task, index) => {
-      sections.push(`#### Similar Task ${index + 1} (${Math.round(task.similarity * 100)}% match)`);
-      sections.push(`**Title:** ${task.title}`);
-      sections.push(`**Description:** ${task.description}`);
-      if (task.plan) {
-        sections.push("**Plan:**");
-        sections.push(indentBlock(task.plan));
-      }
-      sections.push("");
-    });
-  }
-
-  return sections.join("\n");
+  ].join("\n");
 }
 
 function indentBlock(text: string) {
@@ -543,6 +492,12 @@ function buildImplementationPrompt(input: {
     system: systemPrompt,
     user: userPrompt,
   };
+}
+
+function wrapAsCodeFence(content: string, language: string) {
+  const sanitized = content.trim();
+  const fenceLanguage = language ? `${language}` : "";
+  return ["```" + fenceLanguage, sanitized || "(empty)", "```"].join("\n");
 }
 
 function sanitizeBaseBranch(branch: string | null) {
