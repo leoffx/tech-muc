@@ -1,23 +1,23 @@
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { TRPCError } from "@trpc/server";
 import { ConvexHttpClient } from "convex/browser";
-import type { Doc, Id } from "../../../../convex/_generated/dataModel";
-import { api } from "../../../../convex/_generated/api";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { z } from "zod";
+import { api } from "../../../../convex/_generated/api";
+import type { Doc, Id } from "../../../../convex/_generated/dataModel";
 
 import { env } from "~/env";
+import { createWorkspaceOpencodeInstance } from "~/server/agent/opencode";
 import {
   ensureTicketWorkspace,
-  getTicketWorkspace,
   finalizeImplementationChanges,
+  getTicketWorkspace,
   prepareImplementationBranch,
   removeOpencodeArtifacts,
   spawnImplementationClient,
   spawnPlanClient,
   subscribeToLogs,
 } from "~/server/agent/service";
-import { createWorkspaceOpencodeInstance } from "~/server/agent/opencode";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 function loadPlanPrompt() {
@@ -39,8 +39,8 @@ const promptTemplates = Object.freeze({
   implementation: loadImplPrompt(),
 });
 
-export const planRouter = createTRPCRouter({
-  create: publicProcedure
+export const ticketRouter = createTRPCRouter({
+  plan: publicProcedure
     .input(
       z.object({
         ticketId: z.string().min(1, "ticketId is required"),
@@ -98,7 +98,7 @@ export const planRouter = createTRPCRouter({
 
       console.info("[PlanRouter] Generating plan for ticket", {
         ticketId: input.ticketId,
-        userPrompt: userPrompt
+        userPrompt: userPrompt,
       });
 
       const opencodeInstance = await createWorkspaceOpencodeInstance(

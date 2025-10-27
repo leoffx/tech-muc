@@ -5,11 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
 import {
-  KanbanBoard,
   KANBAN_COLUMNS,
+  KanbanBoard,
   type KanbanTicket,
   type TicketStatus,
 } from "~/app/_components/kanban-board";
@@ -32,9 +30,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/app/_components/ui/select";
-import { Textarea } from "~/app/_components/ui/textarea";
 import { Skeleton } from "~/app/_components/ui/skeleton";
+import { Textarea } from "~/app/_components/ui/textarea";
 import { api as trpcApi } from "~/trpc/react";
+import { api } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 type ProjectDetailViewProps = {
   projectId: string;
@@ -71,8 +71,8 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const createTicket = useMutation(api.tickets.create);
   const updateTicketStatus = useMutation(api.tickets.updateStatus);
 
-  const createPlan = trpcApi.plan.create.useMutation();
-  const createImplementation = trpcApi.plan.implement.useMutation();
+  const createPlan = trpcApi.ticket.plan.useMutation();
+  const createImplementation = trpcApi.ticket.implement.useMutation();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formState, setFormState] =

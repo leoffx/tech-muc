@@ -4,10 +4,9 @@ import { useQuery } from "convex/react";
 import { ArrowLeft, RefreshCw, Send } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { api as convexApi } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
+import { AgentStatusBadge } from "~/app/_components/agent-status-badge";
 import {
   KANBAN_COLUMNS,
   type TicketStatus,
@@ -24,7 +23,8 @@ import {
 import { Skeleton } from "~/app/_components/ui/skeleton";
 import { Textarea } from "~/app/_components/ui/textarea";
 import { api } from "~/trpc/react";
-import { AgentStatusBadge } from "~/app/_components/agent-status-badge";
+import { api as convexApi } from "../../../../convex/_generated/api";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 type TicketDetailViewProps = {
   ticketId: string;
@@ -55,7 +55,7 @@ export function TicketDetailView({ ticketId }: TicketDetailViewProps) {
     ticket ? { projectId: ticket.projectId } : "skip",
   );
 
-  const createPlan = api.plan.create.useMutation();
+  const createPlan = api.ticket.plan.useMutation();
 
   // Resizable panel state
   const [leftWidth, setLeftWidth] = useState(50); // percentage
