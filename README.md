@@ -54,36 +54,6 @@ Visit **http://localhost:9000** (production) or **http://localhost:3000** (devel
 
 ---
 
-## 🏗️ Architecture
-
-### Project Structure
-
-```
-tech-muc/
-├── src/
-│   ├── app/                      # Next.js App Router pages
-│   │   ├── _components/          # Shared UI components
-│   │   ├── projects/             # Projects routes
-│   │   ├── tickets/              # Tickets routes
-│   │   └── api/                  # API routes
-│   ├── server/                   # tRPC server
-│   │   ├── api/routers/          # tRPC routers
-│   │   └── agent/                # OpenCode AI integration
-│   ├── lib/                      # Utilities and helpers
-│   ├── trpc/                     # tRPC client setup
-│   └── styles/                   # Global styles
-├── convex/                       # Convex backend
-│   ├── schema.ts                 # Database schema
-│   ├── tickets.ts                # Ticket operations
-│   ├── projects.ts               # Project operations
-│   └── authors.ts                # Author operations
-├── public/                       # Static assets
-├── scripts/                      # Build/deployment scripts
-└── docker-compose.yml            # Production container config
-```
-
----
-
 ## 🤖 AI Agent Workflow
 
 ### 1. Planning Phase
