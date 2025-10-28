@@ -2,7 +2,9 @@
 
 Project created for the [{Tech: Europe} Munich Hackathon](https://luma.com/munich-hack).
 
-**AI-Powered Project Management and Ticket Automation System**
+**Jira board for Agents**
+
+<img src="example.png">
 
 This is an intelligent project management platform that combines real-time collaboration with AI-driven development automation. Built for the modern development workflow, it enables teams to plan, track, and automatically implement features through natural language ticket descriptions.
 
